@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 /*
-  Design tokens ported 1:1 from the retired Streamlit dashboard's palette
-  (dashboard/app.py) so the visual identity carries over exactly:
-  light, friendly, "government transparency dashboard" — not a dark
-  trading-terminal look.
+  APIx design system — light "government analytics platform" visual language:
+  white surfaces, soft blue accents, dense-but-readable cards, subtle borders.
+  Real vs. estimated data keeps its dedicated blue/amber pair from day one —
+  that distinction is a project rule, not a styling choice.
 */
 @theme {
-  --color-apix-real: #0ea5e9;
-  --color-apix-real-secondary: #38bdf8;
+  /* Brand / primary */
+  --color-apix-primary: #2563eb;
+  --color-apix-primary-dark: #1d4ed8;
+  --color-apix-primary-soft: #eff4ff;
+  --color-apix-primary-ring: #bfd4fe;
+
+  /* Data semantics — never collapse these two into one colour */
+  --color-apix-real: #2563eb;
+  --color-apix-real-secondary: #60a5fa;
   --color-apix-estimated: #f59e0b;
-  --color-apix-bg: #f8fafc;
+
+  /* Surfaces */
+  --color-apix-bg: #f4f7fb;
   --color-apix-surface: #ffffff;
-  --color-apix-text: #1e293b;
-  --color-apix-muted: #55617a;
-  --color-apix-border: #e2e8f0;
+  --color-apix-surface-alt: #f8fafc;
+  --color-apix-border: #e5eaf1;
+  --color-apix-border-strong: #d3dbe6;
+
+  /* Text */
+  --color-apix-text: #0f172a;
+  --color-apix-text-soft: #334155;
+  --color-apix-muted: #64748b;
+  --color-apix-faint: #94a3b8;
+
+  /* Status */
+  --color-apix-up: #dc2626;
+  --color-apix-down: #16a34a;
+  --color-apix-ok: #16a34a;
+  --color-apix-warn: #d97706;
+  --color-apix-danger: #dc2626;
   --color-apix-badge-bg: #fef3c7;
   --color-apix-badge-text: #92400e;
-  --color-apix-up: #ef4444;
-  --color-apix-down: #22c55e;
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Categorical series — used for multi-line/multi-bar charts */
+  --color-apix-series-1: #2563eb;
+  --color-apix-series-2: #16a34a;
+  --color-apix-series-3: #d946ef;
+  --color-apix-series-4: #f59e0b;
+  --color-apix-series-5: #0891b2;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
@@ -38,6 +65,7 @@ body {
   background: var(--color-apix-bg);
   color: var(--color-apix-text);
   font-family: var(--font-sans);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -48,7 +76,25 @@ body {
 
 /* Visible focus ring on every interactive element, keyboard and mouse alike. */
 :focus-visible {
-  outline: 2px solid var(--color-apix-real);
+  outline: 2px solid var(--color-apix-primary);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Tabular figures keep KPI columns and tables from shifting as values change. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin scrollbars inside dense scrollable panels. */
+.thin-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-apix-border-strong);
+  border-radius: 999px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
