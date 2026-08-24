@@ -54,7 +54,6 @@ export function MethodologyPage() {
       />
 
       {apix.isError && <ErrorState message={errorMessage(apix.error)} onRetry={() => apix.refetch()} />}
-      {apix.isLoading && <LoadingSkeleton height={300} label="Loading methodology" />}
 
       <div className="grid gap-4 lg:grid-cols-[190px_1fr]">
         <nav aria-label="Methodology sections" className="lg:sticky lg:top-6 lg:self-start">
@@ -79,6 +78,8 @@ export function MethodologyPage() {
         </nav>
 
         <div className="min-w-0 space-y-4">
+          {apix.isLoading && <LoadingSkeleton height={280} label="Loading methodology" />}
+
           {section === "overview" && (
             <Panel title="Air Fare Index — methodology overview">
               <div className="mb-4 flex flex-wrap items-center gap-2">
