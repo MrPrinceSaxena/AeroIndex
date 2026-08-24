@@ -1,39 +1,42 @@
 import type { OutlierGroupStat } from "../../types/apix";
 import { EmptyState } from "../ui/EmptyState";
-import { routeLabel } from "../../utils/format";
+import { routeCode } from "../../utils/format";
 
 interface OutlierBreakdownTableProps {
   groups: OutlierGroupStat[];
 }
 
+/** Per route+window outlier rate, drawn as inline bars for quick comparison. */
 export function OutlierBreakdownTable({ groups }: OutlierBreakdownTableProps) {
   if (groups.length === 0) {
-    return <EmptyState message="Outlier breakdown will appear once fare data has been collected." />;
+    return <EmptyState message="Outlier breakdown appears once enough fares are collected per route and window — the IQR test needs at least four observations in a group." />;
   }
 
+  const max = Math.max(...groups.map((g) => g.pct_outliers), 1);
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[480px] text-left text-sm">
-        <caption className="sr-only">Outlier counts by route and advance-purchase window</caption>
-        <thead>
-          <tr className="border-b border-apix-border text-apix-muted">
-            <th scope="col" className="py-2 pr-4 font-medium">Route</th>
-            <th scope="col" className="py-2 pr-4 font-medium">Window</th>
-            <th scope="col" className="py-2 pr-4 font-medium">Outliers</th>
-            <th scope="col" className="py-2 font-medium">% of group</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((g, i) => (
-            <tr key={`${g.route}-${g.advance_purchase_days}-${i}`} className="border-b border-apix-border last:border-0">
-              <td className="py-2.5 pr-4 font-medium text-apix-text">{routeLabel(g.route)}</td>
-              <td className="py-2.5 pr-4">T-{g.advance_purchase_days}</td>
-              <td className="py-2.5 pr-4">{g.n_outliers} / {g.n_total}</td>
-              <td className="py-2.5">{g.pct_outliers}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="space-y-2">
+      {groups.map((g, i) => (
+        <li key={`${g.route}-${g.advance_purchase_days}-${i}`}>
+          <div className="flex items-baseline justify-between gap-2 text-[12px]">
+            <span className="font-medium text-apix-text">
+              {routeCode(g.route)} <span className="text-apix-muted">· T-{g.advance_purchase_days}</span>
+            </span>
+            <span className="tabular text-apix-muted">
+              {g.n_outliers}/{g.n_total} ·{" "}
+              <span className={g.pct_outliers > 0 ? "font-semibold text-apix-warn" : ""}>
+                {g.pct_outliers}%
+              </span>
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-apix-surface-alt">
+            <div
+              className="h-full rounded-full bg-apix-warn"
+              style={{ width: `${(g.pct_outliers / max) * 100}%` }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

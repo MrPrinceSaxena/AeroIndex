@@ -55,7 +55,7 @@ from src.api.analytics import (
     compute_top_movers,
 )
 from src.cleaning.pipeline import load_raw_fares, deduplicate, flag_outliers, reconcile_fare_components
-from src.api.data_quality import summarize_data_quality, outliers_by_group
+from src.api.data_quality import summarize_data_quality, outliers_by_group, compute_coverage_completeness
 from src.backtest.compare_dgca import compare as compare_dgca, describe_comparison, DEVIATION_THRESHOLD_PCT
 from src.api.quotes import load_fare_quotes_page
 from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_row_counts, check_db_connectivity
@@ -237,6 +237,9 @@ class DataQualityResponse(BaseModel):
     # IDs the real cleaning pipeline flagged as outliers, so other views
     # (Data Explorer) can mark the same rows without re-deriving IQR logic.
     outlier_ids: list[str]
+    expected_cells: int
+    covered_cells: int
+    completeness_pct: float
     generated_at: datetime
 
 
@@ -616,6 +619,7 @@ async def get_data_quality():
             if not flagged_df.empty and "id" in flagged_df.columns
             else []
         ),
+        **compute_coverage_completeness(raw_df),
         generated_at=datetime.utcnow(),
     )
 

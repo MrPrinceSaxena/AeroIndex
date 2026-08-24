@@ -146,6 +146,9 @@ export interface DataQualityResponse {
   cross_source_validation: CrossSourceStat[];
   /** IDs flagged as outliers by the real cleaning pipeline. */
   outlier_ids: string[];
+  expected_cells: number;
+  covered_cells: number;
+  completeness_pct: number;
   generated_at: string;
 }
 

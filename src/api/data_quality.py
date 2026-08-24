@@ -71,3 +71,29 @@ def outliers_by_group(flagged_df: pd.DataFrame) -> pd.DataFrame:
     grouped["n_outliers"] = grouped["n_outliers"].astype(int)
     grouped["pct_outliers"] = (100 * grouped["n_outliers"] / grouped["n_total"]).round(2)
     return grouped
+
+
+def compute_coverage_completeness(df: pd.DataFrame) -> dict:
+    """
+    What share of the index's basket cells actually have a usable fare.
+
+    A "cell" is one route x advance-purchase-window x travel-date combination.
+    The index needs a bookable fare in a cell to price it; a cell holding only
+    sold-out quotes is a hole in the basket even though rows exist for it.
+    Reporting this separately from row counts is the difference between
+    "we collected data" and "we can actually price the basket".
+    """
+    if df.empty:
+        return {"expected_cells": 0, "covered_cells": 0, "completeness_pct": 0.0}
+
+    keys = ["route", "advance_purchase_days", "travel_date"]
+    expected = int(df[keys].drop_duplicates().shape[0])
+
+    bookable = df[~df["is_sold_out"].astype(bool)] if "is_sold_out" in df.columns else df
+    covered = int(bookable[keys].drop_duplicates().shape[0]) if not bookable.empty else 0
+
+    return {
+        "expected_cells": expected,
+        "covered_cells": covered,
+        "completeness_pct": round(100 * covered / expected, 2) if expected else 0.0,
+    }

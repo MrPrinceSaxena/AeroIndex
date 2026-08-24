@@ -11,7 +11,7 @@ from datetime import date
 
 import pandas as pd
 
-from src.api.data_quality import summarize_data_quality, outliers_by_group
+from src.api.data_quality import summarize_data_quality, outliers_by_group, compute_coverage_completeness
 from src.cleaning.pipeline import deduplicate, flag_outliers, reconcile_fare_components
 
 
@@ -102,3 +102,38 @@ class TestOutliersByGroup:
         assert row["n_outliers"] == 1
         assert row["n_total"] == 5
         assert row["pct_outliers"] == 20.0
+
+
+class TestComputeCoverageCompleteness:
+    def test_empty_returns_zeros(self):
+        result = compute_coverage_completeness(pd.DataFrame())
+        assert result == {"expected_cells": 0, "covered_cells": 0, "completeness_pct": 0.0}
+
+    def test_full_coverage(self):
+        df = pd.DataFrame([
+            make_row(route="DEL-BOM", advance_purchase_days=7),
+            make_row(route="DEL-BLR", advance_purchase_days=30),
+        ])
+        result = compute_coverage_completeness(df)
+        assert result["expected_cells"] == 2
+        assert result["covered_cells"] == 2
+        assert result["completeness_pct"] == 100.0
+
+    def test_cell_with_only_sold_out_counts_as_a_hole(self):
+        df = pd.DataFrame([
+            make_row(route="DEL-BOM", advance_purchase_days=7),
+            make_row(route="DEL-BLR", advance_purchase_days=30, is_sold_out=True, total_fare=0.0),
+        ])
+        result = compute_coverage_completeness(df)
+        assert result["expected_cells"] == 2
+        assert result["covered_cells"] == 1
+        assert result["completeness_pct"] == 50.0
+
+    def test_cell_with_mixed_rows_still_counts_as_covered(self):
+        df = pd.DataFrame([
+            make_row(route="DEL-BOM", advance_purchase_days=7, is_sold_out=True, total_fare=0.0),
+            make_row(route="DEL-BOM", advance_purchase_days=7, total_fare=5000.0),
+        ])
+        result = compute_coverage_completeness(df)
+        assert result["covered_cells"] == 1
+        assert result["completeness_pct"] == 100.0

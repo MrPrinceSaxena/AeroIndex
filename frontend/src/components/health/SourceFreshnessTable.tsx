@@ -4,15 +4,18 @@ import { sourceLabel } from "../../utils/format";
 
 interface SourceFreshnessTableProps {
   sources: SourceFreshness[];
+  /** Server response timestamp used as the staleness reference point. */
+  generatedAt: string;
   staleAfterHours?: number;
 }
 
-function hoursSince(iso: string | null): number | null {
+/** Age in hours relative to the server's response timestamp, not wall clock. */
+function hoursSince(iso: string | null, reference: string): number | null {
   if (!iso) return null;
-  return (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60);
+  return (new Date(reference).getTime() - new Date(iso).getTime()) / (1000 * 60 * 60);
 }
 
-export function SourceFreshnessTable({ sources, staleAfterHours = 48 }: SourceFreshnessTableProps) {
+export function SourceFreshnessTable({ sources, generatedAt, staleAfterHours = 48 }: SourceFreshnessTableProps) {
   if (sources.length === 0) {
     return <EmptyState message="No source data yet -- freshness will appear once ingestion has run." />;
   }
@@ -31,7 +34,7 @@ export function SourceFreshnessTable({ sources, staleAfterHours = 48 }: SourceFr
         </thead>
         <tbody>
           {sources.map((s) => {
-            const age = hoursSince(s.latest_created_at);
+            const age = hoursSince(s.latest_created_at, generatedAt);
             const stale = age === null || age > staleAfterHours;
             return (
               <tr key={s.source_name} className="border-b border-apix-border last:border-0">

@@ -53,7 +53,7 @@ export function SystemHealthPage() {
             <h2 id="freshness-heading" className="mb-3 text-lg font-bold text-apix-text">
               Source freshness
             </h2>
-            <SourceFreshnessTable sources={health.data.source_freshness} />
+            <SourceFreshnessTable sources={health.data.source_freshness} generatedAt={health.data.generated_at} />
           </section>
 
           <section aria-labelledby="runs-heading">
