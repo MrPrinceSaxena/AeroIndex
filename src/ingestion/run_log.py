@@ -86,24 +86,44 @@ def load_source_freshness() -> list[dict]:
 
 
 def load_row_counts() -> dict:
-    """Row counts for all three tables -- used in the System Health overview."""
+    """
+    Row counts for all three tables in a single round trip.
+
+    Three separate COUNT queries meant three round trips to a remote
+    database, which dominated the System Health endpoint's response time.
+    Scalar sub-selects collapse that into one.
+    """
     with db_connection() as conn:
         with conn.cursor() as cur:
-            counts = {}
-            for table in ("fare_quotes", "cross_source_check", "ingestion_runs"):
-                cur.execute(f"SELECT COUNT(*) FROM {table};")
-                counts[table] = cur.fetchone()[0]
-            return counts
+            cur.execute(
+                """
+                SELECT (SELECT COUNT(*) FROM fare_quotes)        AS fare_quotes,
+                       (SELECT COUNT(*) FROM cross_source_check) AS cross_source_check,
+                       (SELECT COUNT(*) FROM ingestion_runs)     AS ingestion_runs;
+                """
+            )
+            row = cur.fetchone()
+    return {"fare_quotes": row[0], "cross_source_check": row[1], "ingestion_runs": row[2]}
 
 
 def check_db_connectivity() -> bool:
     """
     Lightweight liveness check -- never raises, just reports True/False.
 
-    Deliberately opens its own short-timeout connection rather than borrowing
-    from the pool: this check has to give a truthful answer even when the pool
-    itself cannot hand out a working connection.
+    Tries a pooled connection first, since that is the path every other query
+    takes and it answers in milliseconds once the pool is warm. Only if that
+    fails does it fall back to opening a direct short-timeout connection, so
+    the check still gives a truthful answer when the pool itself is the thing
+    that is broken.
     """
+    try:
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+        return True
+    except Exception:
+        pass
+
     try:
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
         try:
