@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { IndexPoint, WeeklyPoint } from "../../types/apix";
 import { formatDate, formatIndex } from "../../utils/format";
+import { CHART, axisTick, axisLine, tooltipStyle, legendStyle } from "../../constants/chartTheme";
 
 interface TrendChartProps {
   daily: IndexPoint[];
@@ -68,35 +69,35 @@ export function TrendChart({ daily, weekly }: TrendChartProps) {
           ))}
         </div>
       )}
-      <div className="h-72 w-full" role="img" aria-label="APIx index trend over time">
+      <div className="h-64 w-full" role="img" aria-label="APIx index trend over time">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-            <CartesianGrid stroke="#e2e8f0" vertical={false} />
+            <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
               dataKey="label"
               tickFormatter={labelFormatter}
-              tick={{ fontSize: 12, fill: "#55617a" }}
-              axisLine={{ stroke: "#e2e8f0" }}
+              tick={axisTick}
+              axisLine={axisLine}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: "#55617a" }}
+              tick={axisTick}
               tickFormatter={formatIndex}
-              axisLine={{ stroke: "#e2e8f0" }}
+              axisLine={axisLine}
               width={48}
             />
-            <ReferenceLine y={100} stroke="#94a3b8" strokeDasharray="2 4" />
+            <ReferenceLine y={100} stroke={CHART.reference} strokeDasharray="3 4" />
             <Tooltip
               formatter={(value) => formatIndex(Number(value))}
               labelFormatter={(label) => labelFormatter(String(label))}
-              contentStyle={{ borderRadius: 12, borderColor: "#e2e8f0" }}
+              contentStyle={tooltipStyle}
             />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Legend wrapperStyle={legendStyle} />
             {hasReal && (
               <Line
                 type="monotone"
                 dataKey="real"
                 name="Real data"
-                stroke="#0ea5e9"
+                stroke={CHART.real}
                 strokeWidth={3}
                 dot={{ r: 4 }}
                 connectNulls={false}
@@ -107,7 +108,7 @@ export function TrendChart({ daily, weekly }: TrendChartProps) {
                 type="monotone"
                 dataKey="estimated"
                 name="Estimated (synthetic gap-filler)"
-                stroke="#f59e0b"
+                stroke={CHART.estimated}
                 strokeWidth={2}
                 strokeDasharray="6 4"
                 dot={{ r: 4, strokeWidth: 0 }}

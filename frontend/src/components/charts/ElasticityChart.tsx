@@ -1,16 +1,11 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ElasticityPoint } from "../../types/apix";
-import { formatFare, sourceLabel } from "../../utils/format";
+import { formatFare, formatFareCompact, sourceLabel } from "../../utils/format";
+import { CHART, SOURCE_COLORS, axisTick, axisLine, tooltipStyle, legendStyle } from "../../constants/chartTheme";
 
 interface ElasticityChartProps {
   points: ElasticityPoint[];
 }
-
-const SOURCE_COLORS: Record<string, string> = {
-  air_india_direct: "#0ea5e9",
-  indigo_direct: "#38bdf8",
-  synthetic_estimate: "#f59e0b",
-};
 
 export function ElasticityChart({ points }: ElasticityChartProps) {
   // Pivot into one row per advance-purchase window, one column per source,
@@ -29,20 +24,20 @@ export function ElasticityChart({ points }: ElasticityChartProps) {
   });
 
   return (
-    <div className="h-72 w-full" role="img" aria-label="Fare by days before departure, grouped by source">
+    <div className="h-64 w-full" role="img" aria-label="Fare by days before departure, grouped by source">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-          <CartesianGrid stroke="#e2e8f0" vertical={false} />
-          <XAxis dataKey="window" tick={{ fontSize: 12, fill: "#55617a" }} axisLine={{ stroke: "#e2e8f0" }} />
+          <CartesianGrid stroke={CHART.grid} vertical={false} />
+          <XAxis dataKey="window" tick={axisTick} axisLine={axisLine} />
           <YAxis
-            tick={{ fontSize: 12, fill: "#55617a" }}
-            tickFormatter={formatFare}
-            axisLine={{ stroke: "#e2e8f0" }}
-            width={72}
+            tick={axisTick}
+            tickFormatter={formatFareCompact}
+            axisLine={axisLine}
+            width={58}
           />
-          <Tooltip formatter={(value) => formatFare(Number(value))} contentStyle={{ borderRadius: 12, borderColor: "#e2e8f0" }} />
+          <Tooltip formatter={(value) => formatFare(Number(value))} contentStyle={tooltipStyle} />
           <Legend
-            wrapperStyle={{ fontSize: 12 }}
+            wrapperStyle={legendStyle}
             formatter={(value: string) => sourceLabel(value)}
           />
           {sources.map((source) => (

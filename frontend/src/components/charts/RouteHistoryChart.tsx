@@ -9,7 +9,8 @@ import {
   YAxis,
 } from "recharts";
 import type { RouteHistoryPoint } from "../../types/apix";
-import { formatDate, formatFare } from "../../utils/format";
+import { formatDate, formatFareCompact } from "../../utils/format";
+import { CHART, axisTick, axisLine, tooltipStyle, legendStyle } from "../../constants/chartTheme";
 
 interface RouteHistoryChartProps {
   points: RouteHistoryPoint[];
@@ -34,19 +35,19 @@ export function RouteHistoryChart({ points }: RouteHistoryChartProps) {
   const hasEstimated = rows.some((row) => row.estimated !== null);
 
   return (
-    <div className="h-72 w-full" role="img" aria-label="Median fare over time for this route">
+    <div className="h-64 w-full" role="img" aria-label="Median fare over time for this route">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-          <CartesianGrid stroke="#e2e8f0" vertical={false} />
-          <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 12, fill: "#55617a" }} axisLine={{ stroke: "#e2e8f0" }} />
-          <YAxis tick={{ fontSize: 12, fill: "#55617a" }} tickFormatter={formatFare} axisLine={{ stroke: "#e2e8f0" }} width={72} />
-          <Tooltip formatter={(value) => formatFare(Number(value))} labelFormatter={(label) => formatDate(String(label))} contentStyle={{ borderRadius: 12, borderColor: "#e2e8f0" }} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <CartesianGrid stroke={CHART.grid} vertical={false} />
+          <XAxis dataKey="date" tickFormatter={formatDate} tick={axisTick} axisLine={axisLine} />
+          <YAxis tick={axisTick} tickFormatter={formatFareCompact} axisLine={axisLine} width={58} />
+          <Tooltip formatter={(value) => formatFareCompact(Number(value))} labelFormatter={(label) => formatDate(String(label))} contentStyle={tooltipStyle} />
+          <Legend wrapperStyle={legendStyle} />
           {hasReal && (
-            <Line type="monotone" dataKey="real" name="Real data" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4 }} connectNulls={false} />
+            <Line type="monotone" dataKey="real" name="Real data" stroke={CHART.real} strokeWidth={3} dot={{ r: 4 }} connectNulls={false} />
           )}
           {hasEstimated && (
-            <Line type="monotone" dataKey="estimated" name="Estimated (synthetic gap-filler)" stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, strokeWidth: 0 }} connectNulls={false} />
+            <Line type="monotone" dataKey="estimated" name="Estimated (synthetic gap-filler)" stroke={CHART.estimated} strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, strokeWidth: 0 }} connectNulls={false} />
           )}
         </LineChart>
       </ResponsiveContainer>

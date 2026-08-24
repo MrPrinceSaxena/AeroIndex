@@ -21,7 +21,7 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
-export const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Overview", Icon: LayoutDashboard },
   { to: "/index", label: "Air Fare Index", Icon: LineChart },
   { to: "/routes", label: "Route Analytics", Icon: Waypoints },
