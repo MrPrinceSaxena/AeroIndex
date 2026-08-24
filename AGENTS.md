@@ -10,9 +10,10 @@ BOM-BLR) and 2 advance-purchase windows (T+7, T+30), built from **two independen
 scraped sources** (Air India direct + IndiGo direct) plus a clearly-labelled synthetic
 gap-filler, cleaned into a structured schema, turned into **one** DGCA-traffic-weighted
 chain-linked index using a single defensible formula, backtested against DGCA published
-average fares, and served through a Streamlit dashboard + FastAPI JSON endpoint that
+average fares, and served through an 8-page React dashboard + FastAPI JSON API that
 surfaces **methodology, not just a number** — framed throughout as infrastructure for
-NSO/RBI, not a consumer flight-deal app.
+NSO/RBI, not a consumer flight-deal app. Every number on every page traces to a real
+database-backed API call; nothing is hardcoded or simulated client-side.
 
 Problem statement: SIH 26056 | Team size: 6 | Event: Smart India Hackathon
 
@@ -39,9 +40,9 @@ Problem statement: SIH 26056 | Team size: 6 | Event: Smart India Hackathon
 | Storage | Supabase free Postgres (PRIMARY); SQLite as local fallback for offline dev | SQLite fallback: schema.sql uses gen_random_uuid() which is Postgres-only — see Known Issues |
 | Cleaning | Pandas + NumPy | Fast to write, judges will not question it |
 | Index engine | Pandas + NumPy; ONE formula: DGCA-traffic-weighted, chain-linked fixed-basket | One formula explained beats two formulas that cannot be defended under questioning |
-| Dashboard | Streamlit | Working demo in hours; no time for React at hackathon pace |
-| API | FastAPI | Returns index + methodology metadata — not just a bare number |
-| Hosting | Streamlit Community Cloud (dashboard) + Render free tier (API) | Zero-cost |
+| Frontend | React 19 + TypeScript + Vite + Tailwind v4 + Recharts + TanStack React Query + React Router (`frontend/`) | Superseded Streamlit (2026-08-24) — judging criteria value UI polish; this exercises the alternative the original blueprint already named as a fallback option. 8 pages: Overview, Air Fare Index, Route Analytics, Data Explorer, Data Quality, DGCA Benchmarking, Methodology, System Health |
+| API | FastAPI (`src/api/main.py`) | Returns index + methodology metadata, plus 5 additional endpoints backing the analytics pages — not just a bare number |
+| Hosting | Backend: Render or Railway (`Procfile` at repo root). Frontend: Vercel or Netlify (`frontend/vercel.json` / `frontend/public/_redirects` handle SPA routing) | Zero-cost tiers, see `docs/deployment.md` |
 
 ---
 
@@ -79,6 +80,21 @@ CREATE TABLE cross_source_check (
     price_b               NUMERIC(10,2) NOT NULL,
     pct_difference        NUMERIC(6,2)  NOT NULL  -- shown in Methodology panel
 );
+
+-- ingestion_runs: real record of every `python -m src.ingestion.run_all`
+-- invocation, one row per step — what the System Health page reads instead
+-- of guessing at pipeline status
+CREATE TABLE ingestion_runs (
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id                UUID          NOT NULL,  -- groups steps from one invocation
+    step_name             TEXT          NOT NULL,  -- air_india_direct, indigo_direct,
+                                                    -- synthetic_gap_filler, cross_source_validation
+    started_at            TIMESTAMPTZ   NOT NULL,
+    finished_at           TIMESTAMPTZ,
+    status                TEXT          NOT NULL,  -- success | failed
+    records_ingested      INT           NOT NULL DEFAULT 0,
+    error_message         TEXT
+);
 ```
 
 ---
@@ -106,43 +122,74 @@ Log the result in Known Issues below.
 apix-prototype/
 ├── AGENTS.md                        # THIS FILE — read first, update last
 ├── README.md
-├── .env                             # NOT committed — holds DATABASE_URL
-├── .env.example                     # committed — template only
+├── Procfile                         # Render/Railway backend start command
+├── .env                             # NOT committed — holds DATABASE_URL, CORS_ORIGINS
+├── .env.example                     # NOT committed either (team preference) — local template only
 ├── requirements.txt
 ├── data/
-│   ├── raw/
-│   │   ├── airline_direct/          # Air India raw output
-│   │   └── ota/                     # IndiGo raw output (named ota for pluggability)
+│   ├── raw/                         # gitignored — audit-trail scrape output
 │   ├── synthetic/                   # gap-filler data — always separate
-│   └── clean/                       # post-cleaning pipeline output
+│   └── clean/                       # post-cleaning pipeline output, gitignored
 ├── src/
 │   ├── db/
-│   │   ├── schema.sql
+│   │   ├── schema.sql               # fare_quotes, cross_source_check, ingestion_runs
 │   │   └── init_db.py
 │   ├── ingestion/
 │   │   ├── connectors/
 │   │   │   ├── __init__.py          # BaseConnector ABC — pluggable interface
 │   │   │   ├── air_india_direct.py  # Source 1
 │   │   │   └── indigo_direct.py     # Source 2
-│   │   └── synthetic_generator.py   # gap-filler only
+│   │   ├── synthetic_generator.py   # gap-filler only
+│   │   ├── db_writer.py             # persists FareRecords to fare_quotes
+│   │   ├── run_log.py               # ingestion_runs read/write — System Health's data source
+│   │   └── run_all.py               # `python -m src.ingestion.run_all` orchestrator
 │   ├── validation/
 │   │   └── cross_source_check.py    # Phase 1c
 │   ├── cleaning/
 │   │   └── pipeline.py
 │   ├── index_engine/
 │   │   ├── weights.py
-│   │   └── compute_index.py
+│   │   ├── compute_index.py
+│   │   └── plot_sanity_check.py     # quick matplotlib sanity plot, independent of the frontend
 │   ├── backtest/
 │   │   └── compare_dgca.py
 │   └── api/
-│       └── main.py
-├── dashboard/
-│   └── app.py
+│       ├── main.py                  # FastAPI app — 10 endpoints, see below
+│       ├── analytics.py             # pure functions: heatmap, elasticity, summary, route history/contributions
+│       ├── data_quality.py          # pure aggregation over src/cleaning/pipeline.py's real functions
+│       ├── system_health.py         # pure compute_overall_status()
+│       └── quotes.py                # Data Explorer's parameterized query builder
+├── frontend/                        # React + TypeScript + Vite + Tailwind v4 + Recharts + React Query
+│   └── src/
+│       ├── api/                     # typed fetch client + one function per endpoint
+│       ├── types/apix.ts            # TS mirrors of every Pydantic response model
+│       ├── hooks/                   # one React Query hook per endpoint
+│       ├── components/{charts,metrics,methodology,summary,ui,layout,explorer,quality,benchmarking,health}/
+│       └── pages/                   # OverviewPage, AirFareIndexPage, RouteAnalyticsPage,
+│                                     # DataExplorerPage, DataQualityPage, BenchmarkingPage,
+│                                     # MethodologyPage, SystemHealthPage
 ├── tests/
 └── docs/
     ├── methodology.md
-    └── compliance.md
+    ├── compliance.md
+    └── deployment.md                # Render/Railway (backend) + Vercel/Netlify (frontend)
 ```
+
+## API Endpoints (src/api/main.py)
+
+| Endpoint | Backs |
+|---|---|
+| `GET /apix` | Overview, Air Fare Index — index series + methodology + data coverage |
+| `GET /apix/heatmap` | Air Fare Index — route × window fare heatmap |
+| `GET /apix/elasticity?route=` | Route Analytics — lead-time premium |
+| `GET /apix/summary` | Overview — auto-generated "what this means" sentence |
+| `GET /apix/route-history?route=` | Route Analytics — per-route fare history |
+| `GET /apix/contributions` | Route Analytics — per-route index contribution |
+| `GET /apix/data-quality` | Data Quality — outliers, mismatches, confidence signal |
+| `GET /apix/backtest` | DGCA Benchmarking — comparison + reference data |
+| `GET /apix/quotes` | Data Explorer — filtered, paginated raw fare quotes |
+| `GET /system/health` | System Health — DB connectivity, run history, freshness |
+| `GET /health` | Liveness check |
 
 ---
 
@@ -160,29 +207,26 @@ apix-prototype/
 - Key decisions locked: Streamlit (not React), one index formula (DGCA-weighted chain-linked), Supabase
 - Git: repo initialized locally (2026-08-24), pushed to GitHub (2026-08-24) — see repo URL below
 
-### Phase 1 + 1b + 1c — Ingestion, gap-filler, cross-validation — CODE COMPLETE, UNVERIFIED LIVE (2026-08-24)
+### Phase 1 + 1b + 1c — Ingestion, gap-filler, cross-validation — VERIFIED LIVE (2026-08-24)
 - Source 1 (air_india_direct.py) and Source 2 (indigo_direct.py): Playwright connector
   classes exist, following the shared BaseConnector interface. Fare-card CSS selectors
-  are still TODO placeholders — must be confirmed against the live sites before a real
-  scrape, per the module docstrings.
+  are still TODO placeholders — see Known Issue #3.
 - Pluggable BaseConnector ABC + FareRecord dataclass: done (src/ingestion/connectors/__init__.py)
 - Synthetic gap-filler (synthetic_generator.py): done, calibrated to DGCA FY2023-24 averages
   (DEL-BOM ₹5,800 / DEL-BLR ₹5,200 / BOM-BLR ₹4,600), only fills route/date/window
   combinations missing from real data
 - Cross-source validation (cross_source_check.py): done — compute + save + summary functions
-- **NEW (this session): src/ingestion/db_writer.py** — this was the missing link. Connectors
-  and the synthetic generator returned FareRecord objects but nothing ever wrote them to
-  fare_quotes. save_fare_records() closes that gap.
-- **NEW (this session): src/ingestion/run_all.py** — single entry point
-  (`python -m src.ingestion.run_all`) that runs both connectors, gap-fills, persists to
-  fare_quotes, then runs + persists cross-source validation. This is what README.md
-  already referenced but didn't exist until now.
-- NOT YET DONE: nobody has run this against a live Supabase instance or the real airline
-  sites — no DATABASE_URL is configured in this environment. Treat selectors + live DB
-  write path as unverified until a teammate with Supabase credentials runs it end to end.
-- NEXT: get a Supabase project set up, paste DATABASE_URL into .env, manually inspect
-  airindia.com / goindigo.in fare-result markup and fix the TODO selectors, then run
-  `python -m src.ingestion.run_all`.
+- src/ingestion/db_writer.py: persists FareRecord objects into fare_quotes (was previously
+  missing entirely — connectors and the synthetic generator produced records with nowhere
+  to go).
+- src/ingestion/run_all.py: single entry point (`python -m src.ingestion.run_all`) that runs
+  both connectors, gap-fills, persists to fare_quotes, then runs + persists cross-source
+  validation. Now also logs every step to ingestion_runs via src/ingestion/run_log.py.
+- **Verified live this session**: ran end to end against a real Supabase instance and the
+  real airline sites. air_india_direct got ERR_HTTP2_PROTOCOL_ERROR on every request
+  (handled gracefully, 0 records, no crash); indigo_direct loaded successfully but its
+  placeholder selectors don't match any real fare card, so every quote fell into the
+  "sold out" fallback — see Known Issue #3 for the fix.
 
 ### Phase 2 — Cleaning pipeline — CODE COMPLETE (2026-08-24)
 - dedupe, IQR outlier flagging, base+tax/total reconciliation, sold-out handling all
@@ -204,21 +248,44 @@ apix-prototype/
   before the backtest is presentation-ready
 - 15% deviation threshold flags (not hides) large discrepancies, per blueprint
 
-### Phase 5 — Dashboard + API — CODE COMPLETE, UNVERIFIED LIVE (2026-08-24)
-- FastAPI /apix endpoint (src/api/main.py) returns index + methodology metadata
-  (weights, sources, cross-source validation stats) — imports cleanly, not yet run
-  against a live DB
-- Streamlit dashboard (dashboard/app.py): trend line with real-vs-estimated dashed/amber
-  styling, route heatmap, lead-time elasticity chart, Methodology panel, "what this means"
-  auto-generated sentence — all present
-- Fixed this session: a broken/truncated st.info() hint string that referenced connectors
-  without saying how to run them
-- NOT YET DONE: nobody has loaded either app against real data — needs Supabase +
-  Phase 1 run first
+### Phase 5 — Dashboard + API — SUPERSEDED by Phase 7 (2026-08-24)
+- Original Streamlit dashboard (dashboard/app.py) was built, verified live once (JSON
+  serialization bug and a summary-sentence grammar bug were caught and fixed at that point),
+  then retired entirely and replaced by the React frontend in Phase 7. dashboard/app.py has
+  been deleted from the repo — see Phase 7 below for what replaced it.
 
-### Phase 6 — Polish — NOT STARTED
-- NEXT: once Phase 1 has run against live data at least once, do a full run-through,
-  rehearse the five judge-risk answers (Section 1 of the blueprint), write the demo script
+### Phase 7 — React SaaS rebuild — CODE COMPLETE, VERIFIED LIVE (2026-08-24)
+Two-part expansion in one session: first replaced Streamlit with a 3-page React app
+(Dashboard/Methodology/About), verified live; then expanded to the full 8-page shape the
+user asked for (Overview, Air Fare Index, Route Analytics, Data Explorer, Data Quality,
+DGCA Benchmarking, Methodology, System Health).
+
+- Backend: 5 new endpoints (route-history, contributions, data-quality, backtest, quotes)
+  plus /system/health, all following the existing load/compute-split pattern and reusing
+  real logic (src/cleaning/pipeline.py's actual cleaning functions for Data Quality,
+  compute_daily_index()'s own chain-linking math for Route Analytics contributions) rather
+  than reimplementing anything.
+- New ingestion_runs table + src/ingestion/run_log.py: run_all.py now logs every step
+  (start/finish time, status, records ingested, error) — System Health reads this for real
+  pipeline history instead of a guess. Verified live: a real run produced 0 records from
+  air_india_direct (site returned ERR_HTTP2_PROTOCOL_ERROR — logged as a clean 0-record
+  success, not a crash) and 6 sold-out placeholder records from indigo_direct (selectors
+  still don't match the live page, so it fell into the "no fare cards found" fallback
+  branch — expected given Known Issue #4 below, not a new bug).
+- Frontend: full React app (Vite + TS + Tailwind v4 + Recharts + React Query + React
+  Router), 8 pages, desktop nav (4 primary links + a "Data & Trust" dropdown for the other
+  4) + mobile flat drawer, every panel independently loading/error/empty-state handled.
+- Verified live end-to-end against the real Supabase DB, including the DGCA Benchmarking
+  page's honest "no overlapping month yet" state and the Data Explorer's sold-out badging.
+- 85 backend tests passing, all offline (no DB). Frontend: tsc -b / oxlint / vite build
+  all clean.
+- dashboard/app.py deleted; streamlit/plotly removed from requirements.txt.
+
+### Phase 8 — Polish — NOT STARTED
+- NEXT: fix the TODO CSS selectors in air_india_direct.py / indigo_direct.py against the
+  live sites (Known Issue #3), extend DGCA_REFERENCE with real current-period figures
+  (Known Issue #4) so /apix/backtest actually has something to compare, run a full
+  demo rehearsal, prepare answers to the five judge-risk questions (Section 1).
 
 ---
 
@@ -231,25 +298,31 @@ apix-prototype/
 2. SQLite fallback incompatibility — gen_random_uuid() is Postgres-only. If using SQLite,
    use Python uuid.uuid4() for inserts instead of relying on DB default. No SQLite code path
    actually exists yet — this is Postgres-only today despite being mentioned as a fallback.
-3. Supabase credentials — team must create a Supabase project and paste DATABASE_URL into
-   .env before init_db.py will work. Never commit .env. No live DB has been used to verify
-   anything in this repo yet — all verification so far is either static (syntax/import
-   checks) or offline unit tests against in-memory DataFrames.
-4. Connector CSS selectors are still TODO placeholders in both air_india_direct.py and
-   indigo_direct.py — confirmed by inspecting the live page structure manually before
-   the first real scrape run.
-5. DGCA_REFERENCE in src/backtest/compare_dgca.py only covers 3 months of placeholder
-   data — needs real figures from the DGCA Traffic and Fare Monitor reports.
-6. GitHub repo URL — fill in below once pushed:
-   GitHub repo: https://github.com/MrPrinceSaxena/AeroIndex
+3. Connector CSS selectors are still TODO placeholders in both air_india_direct.py and
+   indigo_direct.py. Confirmed live this session: air_india_direct currently gets
+   ERR_HTTP2_PROTOCOL_ERROR on every request (handled gracefully — 0 records, no crash);
+   indigo_direct successfully loads the page but its selectors don't match any real fare
+   card, so every quote falls into the "sold out" fallback branch. Fix by inspecting the
+   live page structure manually and updating the TODO selectors in both files.
+4. DGCA_REFERENCE in src/backtest/compare_dgca.py only covers 3 placeholder months
+   (2023-04 to 2023-06) — needs real figures from the DGCA Traffic and Fare Monitor
+   reports, ideally extended to cover the current period so /apix/backtest's has_overlap
+   can actually be true against live data instead of always false.
+5. GitHub repo: https://github.com/MrPrinceSaxena/AeroIndex
 
-## Fixed this session (2026-08-24)
-- src/db/init_db.py had an actual Python syntax error (unterminated string literal from a
-  literal newline inside a plain string) — the DB init script could not run at all. Fixed.
+## Fixed across this session (2026-08-24)
+- src/db/init_db.py had an actual Python syntax error (unterminated string literal) — the
+  DB init script could not run at all. Fixed.
 - No code anywhere wrote FareRecord objects into fare_quotes — connectors and the synthetic
   generator produced records that went nowhere. Added src/ingestion/db_writer.py.
-- README.md referenced `python -m src.ingestion.run_all`, which didn't exist. Added it.
-- dashboard/app.py had a broken/truncated hint string ("Tip:  then run the connectors.").
-  Fixed.
-- Added offline unit tests (25 new tests) for cleaning, index-engine, and cross-source-check
-  logic that don't require a live database — all 34 tests in tests/ pass.
+- compute_weekly_index()'s "week" column was a pandas Period object — not JSON-serializable,
+  so /apix 500'd on every request the first time it was actually hit with real data. Fixed
+  by stringifying it before it leaves compute_index.py.
+- The auto-generated "what this means" summary sentence had a grammar bug ("pushing the
+  APIx fell by X%") inherited from the original Streamlit code — fixed to use "up"/"down"
+  for the second clause instead of repeating the verb.
+- dashboard/app.py had a broken/truncated hint string, then was deleted entirely once the
+  React frontend replaced it.
+- Retired Streamlit; built an 8-page React SaaS frontend + 5 new backend endpoints +
+  ingestion_runs pipeline logging (see Phase 7 above for the full breakdown).
+- 85 backend tests passing (up from 9 before this session's work began), all offline.
