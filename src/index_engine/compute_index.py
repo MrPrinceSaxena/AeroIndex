@@ -56,7 +56,7 @@ def load_clean_fares() -> pd.DataFrame:
     try:
         df = pd.read_sql(
             """
-            SELECT route, travel_date, advance_purchase_days,
+            SELECT route, carrier, travel_date, advance_purchase_days,
                    total_fare, source_name, is_sold_out
             FROM fare_quotes
             WHERE is_sold_out = FALSE

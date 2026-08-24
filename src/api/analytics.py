@@ -186,3 +186,141 @@ def compute_route_contributions(daily_df: pd.DataFrame) -> dict:
         "total_log_change": round(total_log_change, 4),
         "contributions": contributions,
     }
+
+
+def compute_catalog(df: pd.DataFrame) -> dict:
+    """
+    The distinct filter values that actually exist in the data right now --
+    routes, carriers, sources, advance-purchase windows and the travel-date
+    bounds. Filter dropdowns are built from this rather than from hardcoded
+    lists, so the UI can never offer a filter that returns nothing.
+    """
+    if df.empty:
+        return {
+            "routes": [],
+            "airlines": [],
+            "sources": [],
+            "advance_purchase_windows": [],
+            "date_min": None,
+            "date_max": None,
+        }
+
+    carriers = sorted(c for c in df["carrier"].dropna().unique())
+    travel_dates = pd.to_datetime(df["travel_date"])
+
+    return {
+        "routes": sorted(df["route"].dropna().unique().tolist()),
+        "airlines": carriers,
+        "sources": sorted(df["source_name"].dropna().unique().tolist()),
+        "advance_purchase_windows": sorted(int(w) for w in df["advance_purchase_days"].dropna().unique()),
+        "date_min": travel_dates.min().date(),
+        "date_max": travel_dates.max().date(),
+    }
+
+
+def compute_fare_summary(df: pd.DataFrame) -> dict:
+    """
+    Headline fare statistics for whatever slice is passed in. Callers are
+    expected to pass bookable fares only (sold-out rows carry total_fare = 0
+    and would drag the mean and min to meaningless values).
+    """
+    if df.empty:
+        return {"avg_fare": None, "min_fare": None, "max_fare": None, "median_fare": None, "n_fares": 0}
+
+    fares = df["total_fare"].dropna()
+    if fares.empty:
+        return {"avg_fare": None, "min_fare": None, "max_fare": None, "median_fare": None, "n_fares": 0}
+
+    return {
+        "avg_fare": round(float(fares.mean()), 2),
+        "min_fare": round(float(fares.min()), 2),
+        "max_fare": round(float(fares.max()), 2),
+        "median_fare": round(float(fares.median()), 2),
+        "n_fares": int(len(fares)),
+    }
+
+
+def compute_fare_distribution(df: pd.DataFrame, bins: int = 10) -> pd.DataFrame:
+    """
+    Histogram of total_fare -- shows the spread behind the averages, so a
+    single mean never has to stand in for the whole distribution.
+    Returns one row per bucket with its range and count.
+    """
+    empty = pd.DataFrame(columns=["bucket_start", "bucket_end", "count"])
+    if df.empty:
+        return empty
+
+    fares = df["total_fare"].dropna()
+    if fares.empty:
+        return empty
+
+    low, high = float(fares.min()), float(fares.max())
+    if low == high:
+        # Every fare identical -- one bucket is the honest representation.
+        return pd.DataFrame([{"bucket_start": low, "bucket_end": high, "count": int(len(fares))}])
+
+    counts, edges = np.histogram(fares, bins=bins, range=(low, high))
+    return pd.DataFrame(
+        [
+            {"bucket_start": round(float(edges[i]), 2), "bucket_end": round(float(edges[i + 1]), 2), "count": int(c)}
+            for i, c in enumerate(counts)
+        ]
+    )
+
+
+def compute_airline_stats(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Per-carrier fare statistics. Rows without a carrier (the synthetic
+    gap-filler never claims one) are excluded rather than bucketed under a
+    fake "Unknown" airline.
+    """
+    empty = pd.DataFrame(columns=["carrier", "avg_fare", "min_fare", "max_fare", "n_fares"])
+    if df.empty or "carrier" not in df.columns:
+        return empty
+
+    named = df[df["carrier"].notna()]
+    if named.empty:
+        return empty
+
+    stats = (
+        named.groupby("carrier")
+        .agg(
+            avg_fare=("total_fare", "mean"),
+            min_fare=("total_fare", "min"),
+            max_fare=("total_fare", "max"),
+            n_fares=("total_fare", "count"),
+        )
+        .reset_index()
+        .sort_values("avg_fare", ascending=False)
+    )
+    for col in ("avg_fare", "min_fare", "max_fare"):
+        stats[col] = stats[col].round(2)
+    stats["n_fares"] = stats["n_fares"].astype(int)
+    return stats
+
+
+def compute_top_movers(contributions: dict, limit: int = 5) -> list[dict]:
+    """
+    Routes ranked by how much their own fares moved between the latest two
+    dates, derived from compute_route_contributions()'s output so both views
+    are guaranteed to agree. Routes without both endpoints are skipped.
+    """
+    if not contributions.get("has_sufficient_data"):
+        return []
+
+    movers = []
+    for c in contributions.get("contributions", []):
+        prev, latest = c.get("fare_previous"), c.get("fare_latest")
+        if prev in (None, 0) or latest is None:
+            continue
+        movers.append(
+            {
+                "route": c["route"],
+                "pct_change": round((latest - prev) / prev * 100, 2),
+                "fare_previous": prev,
+                "fare_latest": latest,
+            }
+        )
+
+    movers.sort(key=lambda m: abs(m["pct_change"]), reverse=True)
+    return movers[:limit]

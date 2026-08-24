@@ -48,6 +48,11 @@ from src.api.analytics import (
     generate_summary_sentence,
     compute_route_fare_history,
     compute_route_contributions,
+    compute_catalog,
+    compute_fare_summary,
+    compute_fare_distribution,
+    compute_airline_stats,
+    compute_top_movers,
 )
 from src.cleaning.pipeline import load_raw_fares, deduplicate, flag_outliers, reconcile_fare_components
 from src.api.data_quality import summarize_data_quality, outliers_by_group
@@ -302,6 +307,72 @@ class SystemHealthResponse(BaseModel):
     row_counts: TableRowCounts
     recent_runs: list[IngestionRunRecord]
     source_freshness: list[SourceFreshness]
+    generated_at: datetime
+
+
+class CatalogResponse(BaseModel):
+    routes: list[str]
+    airlines: list[str]
+    sources: list[str]
+    advance_purchase_windows: list[int]
+    date_min: date | None
+    date_max: date | None
+    generated_at: datetime
+
+
+class WindowIndex(BaseModel):
+    advance_purchase_days: int
+    latest_value: float
+    change_pct: float | None
+    is_estimated: bool
+    n_points: int
+
+
+class TopMover(BaseModel):
+    route: str
+    pct_change: float
+    fare_previous: float
+    fare_latest: float
+
+
+class OverviewResponse(BaseModel):
+    latest_value: float | None
+    latest_date: date | None
+    base_date: date | None
+    change_pct: float | None
+    routes_monitored: int
+    airlines_monitored: int
+    total_quotes: int
+    real_quotes: int
+    synthetic_quotes: int
+    index_by_window: list[WindowIndex]
+    top_movers: list[TopMover]
+    generated_at: datetime
+
+
+class FareBucket(BaseModel):
+    bucket_start: float
+    bucket_end: float
+    count: int
+
+
+class AirlineStat(BaseModel):
+    carrier: str
+    avg_fare: float
+    min_fare: float
+    max_fare: float
+    n_fares: int
+
+
+class RouteStatsResponse(BaseModel):
+    filters_applied: dict
+    avg_fare: float | None
+    min_fare: float | None
+    max_fare: float | None
+    median_fare: float | None
+    n_fares: int
+    distribution: list[FareBucket]
+    airlines: list[AirlineStat]
     generated_at: datetime
 
 
@@ -695,6 +766,135 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
             )
             for s in source_freshness
         ],
+        generated_at=datetime.utcnow(),
+    )
+
+
+@app.get("/apix/catalog", response_model=CatalogResponse)
+async def get_catalog():
+    """
+    The filter values that actually exist in the data right now. Every filter
+    dropdown in the UI is built from this, so the interface can never offer a
+    route, airline or window that would return nothing.
+    """
+    try:
+        df = load_raw_fares()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
+
+    return CatalogResponse(**compute_catalog(df), generated_at=datetime.utcnow())
+
+
+@app.get("/apix/overview", response_model=OverviewResponse)
+async def get_overview():
+    """
+    Landing-page KPIs: coverage counts, the headline index, a separate index
+    per advance-purchase window, and the routes that moved most. The
+    per-window indices reuse compute_daily_index() on a filtered slice rather
+    than a second formula, so every number on the page traces back to the one
+    locked index definition.
+    """
+    try:
+        raw_df = load_raw_fares()
+        clean_df = load_clean_fares()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
+
+    coverage = compute_data_coverage(raw_df) if not raw_df.empty else {"n_real": 0, "n_synthetic": 0}
+    catalog = compute_catalog(raw_df)
+
+    daily_df = compute_daily_index(clean_df)
+    latest_value = latest_date = base_date = change_pct = None
+    if not daily_df.empty:
+        latest_value = float(daily_df.iloc[-1]["apix_value"])
+        latest_date = daily_df.iloc[-1]["date"]
+        base_date = daily_df.iloc[0]["date"]
+        base_value = float(daily_df.iloc[0]["apix_value"])
+        if base_value:
+            change_pct = round((latest_value - base_value) / base_value * 100, 2)
+
+    index_by_window: list[WindowIndex] = []
+    for window in catalog["advance_purchase_windows"]:
+        window_df = clean_df[clean_df["advance_purchase_days"] == window]
+        window_daily = compute_daily_index(window_df)
+        if window_daily.empty:
+            continue
+        w_latest = float(window_daily.iloc[-1]["apix_value"])
+        w_base = float(window_daily.iloc[0]["apix_value"])
+        index_by_window.append(
+            WindowIndex(
+                advance_purchase_days=int(window),
+                latest_value=round(w_latest, 2),
+                change_pct=round((w_latest - w_base) / w_base * 100, 2) if w_base else None,
+                is_estimated=bool(window_daily.iloc[-1]["is_estimated"]),
+                n_points=int(len(window_daily)),
+            )
+        )
+
+    movers = compute_top_movers(compute_route_contributions(daily_df))
+
+    return OverviewResponse(
+        latest_value=round(latest_value, 2) if latest_value is not None else None,
+        latest_date=latest_date,
+        base_date=base_date,
+        change_pct=change_pct,
+        routes_monitored=len(catalog["routes"]),
+        airlines_monitored=len(catalog["airlines"]),
+        total_quotes=int(len(raw_df)),
+        real_quotes=coverage["n_real"],
+        synthetic_quotes=coverage["n_synthetic"],
+        index_by_window=index_by_window,
+        top_movers=[TopMover(**m) for m in movers],
+        generated_at=datetime.utcnow(),
+    )
+
+
+@app.get("/apix/route-stats", response_model=RouteStatsResponse)
+async def get_route_stats(
+    route: Route | None = Query(None),
+    airline: str | None = Query(None),
+    advance_purchase_days: int | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+):
+    """
+    Fare statistics for an arbitrary filtered slice: headline avg/min/max,
+    the distribution behind those averages, and a per-airline breakdown.
+    Operates on bookable fares only -- sold-out rows carry total_fare = 0 and
+    would drag the mean and minimum to meaningless values.
+    """
+    try:
+        df = load_clean_fares()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
+
+    if not df.empty:
+        if route:
+            df = df[df["route"] == route]
+        if advance_purchase_days is not None:
+            df = df[df["advance_purchase_days"] == advance_purchase_days]
+        if date_from:
+            df = df[pd.to_datetime(df["travel_date"]) >= pd.Timestamp(date_from)]
+        if date_to:
+            df = df[pd.to_datetime(df["travel_date"]) <= pd.Timestamp(date_to)]
+        if airline and "carrier" in df.columns:
+            df = df[df["carrier"] == airline]
+
+    summary = compute_fare_summary(df)
+    distribution = compute_fare_distribution(df)
+    airlines = compute_airline_stats(df)
+
+    return RouteStatsResponse(
+        filters_applied={
+            "route": route,
+            "airline": airline,
+            "advance_purchase_days": advance_purchase_days,
+            "date_from": str(date_from) if date_from else None,
+            "date_to": str(date_to) if date_to else None,
+        },
+        **summary,
+        distribution=[FareBucket(**b) for b in distribution.to_dict(orient="records")],
+        airlines=[AirlineStat(**a) for a in airlines.to_dict(orient="records")],
         generated_at=datetime.utcnow(),
     )
 
