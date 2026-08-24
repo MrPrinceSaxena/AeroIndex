@@ -21,6 +21,8 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+from src.db.connection import db_connection
+
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -35,8 +37,7 @@ def log_run_step(
     error_message: Optional[str] = None,
 ) -> None:
     """Insert one row describing one step of one ingestion run."""
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -47,14 +48,11 @@ def log_run_step(
                 (str(run_id), step_name, started_at, finished_at, status, records_ingested, error_message),
             )
         conn.commit()
-    finally:
-        conn.close()
 
 
 def load_recent_runs(limit: int = 20) -> list[dict]:
     """Most recent ingestion_runs rows, newest first."""
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
@@ -67,14 +65,11 @@ def load_recent_runs(limit: int = 20) -> list[dict]:
                 (limit,),
             )
             return [dict(row) for row in cur.fetchall()]
-    finally:
-        conn.close()
 
 
 def load_source_freshness() -> list[dict]:
     """Per-source row counts and most recent scrape/insert timestamps."""
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """
@@ -88,26 +83,27 @@ def load_source_freshness() -> list[dict]:
                 """
             )
             return [dict(row) for row in cur.fetchall()]
-    finally:
-        conn.close()
 
 
 def load_row_counts() -> dict:
     """Row counts for all three tables -- used in the System Health overview."""
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor() as cur:
             counts = {}
             for table in ("fare_quotes", "cross_source_check", "ingestion_runs"):
                 cur.execute(f"SELECT COUNT(*) FROM {table};")
                 counts[table] = cur.fetchone()[0]
             return counts
-    finally:
-        conn.close()
 
 
 def check_db_connectivity() -> bool:
-    """Lightweight liveness check -- never raises, just reports True/False."""
+    """
+    Lightweight liveness check -- never raises, just reports True/False.
+
+    Deliberately opens its own short-timeout connection rather than borrowing
+    from the pool: this check has to give a truthful answer even when the pool
+    itself cannot hand out a working connection.
+    """
     try:
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
         try:

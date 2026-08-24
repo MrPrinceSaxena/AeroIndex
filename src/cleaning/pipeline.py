@@ -22,22 +22,20 @@ import numpy as np
 from dotenv import load_dotenv
 import psycopg2
 
+from src.db.connection import db_connection
+
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def load_raw_fares() -> pd.DataFrame:
     """Load all fare_quotes from Postgres."""
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
-        df = pd.read_sql(
+    with db_connection() as conn:
+        return pd.read_sql(
             "SELECT * FROM fare_quotes ORDER BY travel_date, route, source_name",
             conn,
             parse_dates=["date_scraped", "travel_date"],
         )
-    finally:
-        conn.close()
-    return df
 
 
 def deduplicate(df: pd.DataFrame) -> pd.DataFrame:

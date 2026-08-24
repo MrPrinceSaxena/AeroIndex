@@ -60,6 +60,7 @@ from src.backtest.compare_dgca import compare as compare_dgca, describe_comparis
 from src.api.quotes import load_fare_quotes_page
 from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_row_counts, check_db_connectivity
 from src.api.system_health import compute_overall_status
+from src.db.connection import close_pool
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
@@ -84,6 +85,12 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("shutdown")
+def _close_db_pool() -> None:
+    """Release pooled Postgres connections when the API stops."""
+    close_pool()
 
 
 @app.exception_handler(Exception)
@@ -227,6 +234,9 @@ class DataQualityResponse(BaseModel):
     component_mismatch_pct: float
     rows_per_source: list[SourceRowCount]
     cross_source_validation: list[CrossSourceStat]
+    # IDs the real cleaning pipeline flagged as outliers, so other views
+    # (Data Explorer) can mark the same rows without re-deriving IQR logic.
+    outlier_ids: list[str]
     generated_at: datetime
 
 
@@ -601,6 +611,11 @@ async def get_data_quality():
         component_mismatch_pct=summary["component_mismatch_pct"],
         rows_per_source=[SourceRowCount(**r) for r in summary["rows_per_source"]],
         cross_source_validation=[CrossSourceStat(**s) for s in validation_stats],
+        outlier_ids=(
+            [str(i) for i in flagged_df.loc[flagged_df["is_outlier"], "id"]]
+            if not flagged_df.empty and "id" in flagged_df.columns
+            else []
+        ),
         generated_at=datetime.utcnow(),
     )
 

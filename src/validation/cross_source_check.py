@@ -22,6 +22,8 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 import psycopg2
+
+from src.db.connection import db_connection
 from psycopg2.extras import execute_values
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -104,8 +106,7 @@ def save_to_db(cross_df: pd.DataFrame) -> int:
         for _, row in cross_df.iterrows()
     ]
 
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor() as cur:
             execute_values(
                 cur,
@@ -121,8 +122,6 @@ def save_to_db(cross_df: pd.DataFrame) -> int:
         conn.commit()
         print(f"Logged {len(rows)} cross-source comparison records.")
         return len(rows)
-    finally:
-        conn.close()
 
 
 def get_validation_summary() -> dict:
@@ -130,8 +129,7 @@ def get_validation_summary() -> dict:
     Fetch cross-source validation stats for the Methodology panel.
     Returns a dict with mean/max % difference per route — used in the dashboard.
     """
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         df = pd.read_sql(
             """
             SELECT route,
@@ -145,6 +143,4 @@ def get_validation_summary() -> dict:
             """,
             conn,
         )
-        return df.to_dict(orient="records")
-    finally:
-        conn.close()
+    return df.to_dict(orient="records")

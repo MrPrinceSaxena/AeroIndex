@@ -12,6 +12,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 import psycopg2
+
+from src.db.connection import db_connection
 from psycopg2.extras import execute_values
 
 from src.ingestion.connectors import FareRecord
@@ -50,8 +52,7 @@ def save_fare_records(records: list[FareRecord]) -> int:
         for r in records
     ]
 
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         with conn.cursor() as cur:
             execute_values(
                 cur,
@@ -65,7 +66,5 @@ def save_fare_records(records: list[FareRecord]) -> int:
                 rows,
             )
         conn.commit()
-        print(f"Saved {len(rows)} fare_quotes records.")
-        return len(rows)
-    finally:
-        conn.close()
+    print(f"Saved {len(rows)} fare_quotes records.")
+    return len(rows)

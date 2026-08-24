@@ -21,6 +21,8 @@ from dotenv import load_dotenv
 import pandas as pd
 import psycopg2
 
+from src.db.connection import db_connection
+
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -90,11 +92,8 @@ def load_fare_quotes_page(
     sql, params = build_quotes_query(
         route, source_name, advance_purchase_days, date_from, date_to, include_sold_out, limit, offset
     )
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         df = pd.read_sql(sql, conn, params=params, parse_dates=["date_scraped", "travel_date"])
-    finally:
-        conn.close()
 
     if df.empty:
         return df.drop(columns=["total_count"], errors="ignore"), 0

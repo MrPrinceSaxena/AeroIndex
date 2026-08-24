@@ -144,6 +144,8 @@ export interface DataQualityResponse {
   component_mismatch_pct: number;
   rows_per_source: SourceRowCount[];
   cross_source_validation: CrossSourceStat[];
+  /** IDs flagged as outliers by the real cleaning pipeline. */
+  outlier_ids: string[];
   generated_at: string;
 }
 

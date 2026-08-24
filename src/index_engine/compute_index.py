@@ -38,6 +38,8 @@ import numpy as np
 from dotenv import load_dotenv
 import psycopg2
 
+from src.db.connection import db_connection
+
 from src.index_engine.weights import ROUTE_WEIGHTS
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -52,8 +54,7 @@ def load_clean_fares() -> pd.DataFrame:
     Excludes sold-out entries from index calculation.
     Preserves source_name for transparency.
     """
-    conn = psycopg2.connect(DATABASE_URL)
-    try:
+    with db_connection() as conn:
         df = pd.read_sql(
             """
             SELECT route, carrier, travel_date, advance_purchase_days,
@@ -65,8 +66,6 @@ def load_clean_fares() -> pd.DataFrame:
             conn,
             parse_dates=["travel_date"],
         )
-    finally:
-        conn.close()
     return df
 
 
