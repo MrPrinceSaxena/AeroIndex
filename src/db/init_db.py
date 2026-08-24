@@ -49,23 +49,24 @@ def init_db() -> None:
             cur.execute(schema_sql)
             print("Schema applied successfully.")
 
-            # Verify both tables exist
+            # Verify all tables exist
+            expected_tables = {"fare_quotes", "cross_source_check", "ingestion_runs"}
             cur.execute(
                 """
                 SELECT table_name
                 FROM information_schema.tables
                 WHERE table_schema = 'public'
-                  AND table_name IN ('fare_quotes', 'cross_source_check')
+                  AND table_name IN ('fare_quotes', 'cross_source_check', 'ingestion_runs')
                 ORDER BY table_name;
                 """
             )
             tables = [row[0] for row in cur.fetchall()]
             print(f"Tables confirmed in database: {tables}")
 
-            if set(tables) == {"fare_quotes", "cross_source_check"}:
+            if set(tables) == expected_tables:
                 print("Connection OK — Phase 0 complete.")
             else:
-                missing = {"fare_quotes", "cross_source_check"} - set(tables)
+                missing = expected_tables - set(tables)
                 print(f"WARNING: missing tables: {missing}", file=sys.stderr)
     finally:
         conn.close()

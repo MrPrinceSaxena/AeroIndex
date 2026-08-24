@@ -99,3 +99,15 @@ class TestComputeWeeklyIndex:
         ])
         result = compute_weekly_index(daily)
         assert result.iloc[0]["is_estimated"]
+
+    def test_week_column_is_json_serializable_string(self):
+        # Regression: pandas Period objects (the raw output of dt.to_period)
+        # are not JSON-serializable and broke the live /apix endpoint the
+        # first time it was ever hit with real data.
+        daily = pd.DataFrame([
+            {"date": pd.Timestamp("2026-08-03"), "apix_value": 100.0, "is_estimated": False},
+        ])
+        result = compute_weekly_index(daily)
+        assert isinstance(result.iloc[0]["week"], str)
+        import json
+        json.dumps(result.to_dict(orient="records"))  # must not raise

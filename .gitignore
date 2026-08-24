@@ -36,3 +36,12 @@ data/clean/*.png
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Frontend (Vite + React)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Claude Code local/personal settings (not shared team config)
+.claude/settings.local.json

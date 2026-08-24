@@ -95,3 +95,29 @@ def compare(apix_daily_df: pd.DataFrame) -> pd.DataFrame:
         print(f"BACKTEST: All route-months within {DEVIATION_THRESHOLD_PCT}% of DGCA reference.")
 
     return merged
+
+
+def describe_comparison(apix_daily_df: pd.DataFrame, comparison_df: pd.DataFrame) -> dict:
+    """
+    Frames compare()'s output for the API/UI layer: whether any overlap
+    exists, and what period each side actually covers. This is what lets the
+    DGCA Benchmarking page give an honest explanation instead of a blank
+    chart when live data and the reference months don't overlap yet -- a
+    near-certain state right now, since live data is dated in the current
+    year and DGCA_REFERENCE only covers three fixed 2023 months.
+    """
+    if apix_daily_df.empty:
+        live_data_period = None
+    else:
+        dates = pd.to_datetime(apix_daily_df["date"])
+        live_data_period = f"{dates.min().date()} to {dates.max().date()}"
+
+    reference_months = sorted(DGCA_REFERENCE["month"].unique())
+    reference_period = f"{reference_months[0]} to {reference_months[-1]}" if reference_months else "no reference data"
+
+    return {
+        "has_overlap": not comparison_df.empty,
+        "live_data_period": live_data_period,
+        "reference_period": reference_period,
+        "reference_data": DGCA_REFERENCE.to_dict(orient="records"),
+    }

@@ -158,4 +158,7 @@ def compute_weekly_index(daily_df: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     weekly["apix_value"] = weekly["apix_value"].round(2)
+    # pandas Period isn't JSON-serializable -- stringify before this leaves
+    # pandas (e.g. into the FastAPI response), or downstream serialization breaks.
+    weekly["week"] = weekly["week"].astype(str)
     return weekly

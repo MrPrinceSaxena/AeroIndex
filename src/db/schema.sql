@@ -73,3 +73,31 @@ CREATE TABLE IF NOT EXISTS cross_source_check (
 
 CREATE INDEX IF NOT EXISTS idx_cross_source_route_date
     ON cross_source_check (route, travel_date, advance_purchase_days);
+
+-- ───────────────────────────────────────────────────────────────────────────────
+-- TABLE: ingestion_runs
+-- Every step of every `python -m src.ingestion.run_all` invocation logs one row
+-- here -- this is what the System Health page reads to show real pipeline
+-- history (last run, per-step success/failure, records ingested) instead of a
+-- guess. run_id groups the steps that belong to one invocation together.
+-- ───────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS ingestion_runs (
+    id                    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id                UUID          NOT NULL,
+    step_name             TEXT          NOT NULL
+                            CHECK (step_name IN (
+                                'air_india_direct', 'indigo_direct',
+                                'synthetic_gap_filler', 'cross_source_validation'
+                            )),
+    started_at            TIMESTAMPTZ   NOT NULL,
+    finished_at           TIMESTAMPTZ,
+    status                TEXT          NOT NULL CHECK (status IN ('success', 'failed')),
+    records_ingested      INT           NOT NULL DEFAULT 0,
+    error_message         TEXT,
+    created_at            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_runs_started_at
+    ON ingestion_runs (started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ingestion_runs_run_id
+    ON ingestion_runs (run_id);

@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/*
+  Design tokens ported 1:1 from the retired Streamlit dashboard's palette
+  (dashboard/app.py) so the visual identity carries over exactly:
+  light, friendly, "government transparency dashboard" — not a dark
+  trading-terminal look.
+*/
+@theme {
+  --color-apix-real: #0ea5e9;
+  --color-apix-real-secondary: #38bdf8;
+  --color-apix-estimated: #f59e0b;
+  --color-apix-bg: #f8fafc;
+  --color-apix-surface: #ffffff;
+  --color-apix-text: #1e293b;
+  --color-apix-muted: #55617a;
+  --color-apix-border: #e2e8f0;
+  --color-apix-badge-bg: #fef3c7;
+  --color-apix-badge-text: #92400e;
+  --color-apix-up: #ef4444;
+  --color-apix-down: #22c55e;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-apix-bg);
+  color: var(--color-apix-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Visible focus ring on every interactive element, keyboard and mouse alike. */
+:focus-visible {
+  outline: 2px solid var(--color-apix-real);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
