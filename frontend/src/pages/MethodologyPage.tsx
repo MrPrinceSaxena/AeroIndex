@@ -1,207 +1,297 @@
+import { useState } from "react";
 import { useApix } from "../hooks/useApix";
+import { PageHeader } from "../components/layout/PageHeader";
+import { Panel } from "../components/ui/Panel";
+import { Badge } from "../components/ui/Badge";
 import { RouteWeightsTable } from "../components/methodology/RouteWeightsTable";
 import { CrossSourceStatsTable } from "../components/methodology/CrossSourceStatsTable";
 import { LoadingSkeleton } from "../components/ui/LoadingSkeleton";
 import { ErrorState } from "../components/ui/ErrorState";
 import { ApiError } from "../api/client";
+import { Plane, Filter, Calculator, ShieldCheck, ScrollText } from "lucide-react";
 
 function errorMessage(error: unknown): string {
   return error instanceof ApiError ? error.message : "Something went wrong.";
 }
 
+const SECTIONS = [
+  { id: "overview", label: "Overview" },
+  { id: "collection", label: "Data Collection" },
+  { id: "cleaning", label: "Data Cleaning" },
+  { id: "index", label: "Index Calculation" },
+  { id: "weights", label: "Weighting Method" },
+  { id: "validation", label: "Validation" },
+  { id: "compliance", label: "Compliance" },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]["id"];
+
+const PIPELINE = [
+  { Icon: Plane, label: "Collect" },
+  { Icon: Filter, label: "Clean" },
+  { Icon: ShieldCheck, label: "Validate" },
+  { Icon: Calculator, label: "Index" },
+];
+
+const ROBOTS = [
+  { site: "Air India", url: "airindia.com/robots.txt", disallows: "/bin/, company image assets, loyalty page", decision: "Permitted — flight search not disallowed", tone: "success" as const },
+  { site: "IndiGo", url: "goindigo.in/robots.txt", disallows: "Server error — unverified", decision: "Pending manual check", tone: "warning" as const },
+  { site: "Ixigo", url: "ixigo.com/robots.txt", disallows: "/flights/search, /search/result/", decision: "Excluded", tone: "danger" as const },
+  { site: "EaseMyTrip", url: "easemytrip.com/robots.txt", disallows: "/flight-search/listing*", decision: "Excluded", tone: "danger" as const },
+  { site: "Cleartrip", url: "cleartrip.com/robots.txt", disallows: "/flights/search*", decision: "Excluded", tone: "danger" as const },
+];
+
 export function MethodologyPage() {
   const apix = useApix();
+  const [section, setSection] = useState<SectionId>("overview");
+  const m = apix.data?.methodology;
 
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold text-apix-text">Methodology</h1>
-        <p className="mt-1 text-sm text-apix-muted">
-          Why should you trust this index? Two reasons — and both are shown here, not buried
-          in code.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Methodology"
+        subtitle="Why this index can be trusted: where the numbers come from, how they are cleaned, how they are combined, and what was ruled out along the way."
+      />
 
-      {apix.isLoading && <LoadingSkeleton height={400} label="Loading methodology" />}
       {apix.isError && <ErrorState message={errorMessage(apix.error)} onRetry={() => apix.refetch()} />}
+      {apix.isLoading && <LoadingSkeleton height={300} label="Loading methodology" />}
 
-      {apix.data && (
-        <>
-          <section aria-labelledby="weights-heading">
-            <h2 id="weights-heading" className="text-lg font-bold text-apix-text">
-              1. Route weights come from government data, not guesswork
-            </h2>
-            <p className="mt-1 text-sm text-apix-muted">
-              Weights = each route&apos;s share of total passenger traffic. DEL-BOM gets the
-              highest weight because it carries the most passengers — a fare spike there
-              affects more travellers. Same logic as CPI food weighting.
-            </p>
-            <div className="mt-4 rounded-2xl border border-apix-border bg-apix-surface p-6">
-              <RouteWeightsTable weights={apix.data.methodology.route_weights} />
-            </div>
-          </section>
+      <div className="grid gap-4 lg:grid-cols-[190px_1fr]">
+        <nav aria-label="Methodology sections" className="lg:sticky lg:top-6 lg:self-start">
+          <ul className="thin-scroll flex gap-1 overflow-x-auto rounded-xl border border-apix-border bg-apix-surface p-1.5 lg:flex-col lg:overflow-visible">
+            {SECTIONS.map((s) => (
+              <li key={s.id} className="shrink-0 lg:shrink">
+                <button
+                  type="button"
+                  onClick={() => setSection(s.id)}
+                  aria-current={section === s.id ? "true" : undefined}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-[12px] font-medium whitespace-nowrap transition-colors ${
+                    section === s.id
+                      ? "bg-apix-primary-soft text-apix-primary"
+                      : "text-apix-text-soft hover:bg-apix-surface-alt"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <section aria-labelledby="validation-heading">
-            <h2 id="validation-heading" className="text-lg font-bold text-apix-text">
-              2. Cross-source validation — same routes, two independent airlines
-            </h2>
-            <p className="mt-1 text-sm text-apix-muted">
-              These are the % fare differences between Air India and IndiGo on the same
-              route/date. A small % difference confirms neither source is an outlier — the
-              index reflects the market.
-            </p>
-            <div className="mt-4 rounded-2xl border border-apix-border bg-apix-surface p-6">
-              <CrossSourceStatsTable stats={apix.data.methodology.cross_source_validation} />
-            </div>
-          </section>
-
-          <section aria-labelledby="formula-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-            <h2 id="formula-heading" className="text-lg font-bold text-apix-text">
-              The formula
-            </h2>
-            <p className="mt-2 text-sm text-apix-text">{apix.data.methodology.index_formula}</p>
-            <p className="mt-2 text-sm text-apix-muted">{apix.data.methodology.chain_linking}</p>
-            <div className="mt-4 space-y-2 text-sm text-apix-muted">
-              <p>
-                <span className="font-semibold text-apix-text">Why weighted, not a naive average?</span>{" "}
-                A simple average treats a low-traffic route the same as a high-traffic one — but
-                a fare spike on DEL-BOM affects roughly 3x the travellers a spike on BOM-BLR does.
-                Weighting means the index moves proportionally to real-world impact, the same
-                principle behind CPI food weighting.
+        <div className="min-w-0 space-y-4">
+          {section === "overview" && (
+            <Panel title="Air Fare Index — methodology overview">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                {PIPELINE.map(({ Icon, label }, i) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <div className="flex flex-col items-center rounded-lg border border-apix-border bg-apix-surface-alt px-4 py-2.5">
+                      <Icon className="h-4 w-4 text-apix-primary" aria-hidden="true" />
+                      <span className="mt-1 text-[11px] font-semibold text-apix-text">{label}</span>
+                    </div>
+                    {i < PIPELINE.length - 1 && <span className="text-apix-faint">→</span>}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[13px] leading-relaxed text-apix-muted">
+                The APIx Air Fare Index measures how airfares move over time across key domestic routes and
+                booking windows. It combines real and clearly-labelled synthetic data from multiple sources,
+                applies rigorous cleaning, deduplication and outlier handling, and produces a single weighted
+                index using route and booking-window weights derived from DGCA passenger traffic — benchmarked
+                against DGCA's own published fare indicators.
               </p>
-              <p>
-                <span className="font-semibold text-apix-text">Why chain-linked?</span> A fixed
-                base period causes index drift as market conditions shift over time. Monthly
-                chain-linking resets the reference each month, keeping the index comparable to
-                DGCA&apos;s published fare data — the same approach used in India&apos;s GDP
-                deflator.
+              {m && (
+                <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-apix-border px-3 py-2">
+                    <dt className="text-[11px] text-apix-muted">Formula</dt>
+                    <dd className="mt-0.5 text-[13px] font-semibold text-apix-text">{m.index_formula}</dd>
+                  </div>
+                  <div className="rounded-lg border border-apix-border px-3 py-2">
+                    <dt className="text-[11px] text-apix-muted">Chain-linking</dt>
+                    <dd className="mt-0.5 text-[13px] font-semibold text-apix-text">{m.chain_linking}</dd>
+                  </div>
+                </dl>
+              )}
+            </Panel>
+          )}
+
+          {section === "collection" && (
+            <Panel title="Data collection" caption="Two independent airline-direct sources plus a labelled gap-filler.">
+              <ul className="space-y-2 text-[13px] leading-relaxed text-apix-muted">
+                {m?.data_sources.map((s) => (
+                  <li key={s} className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-apix-primary" />
+                    <code className="text-[12px]">{s}</code>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[13px] leading-relaxed text-apix-muted">
+                Collection is polite by design: a minimum three-second delay between requests, a hard cap of
+                six page loads per run, a non-impersonating user agent identifying the research bot, no login
+                or booking flows, and raw responses retained for audit. Synthetic records are only ever
+                generated for route/date/window combinations the real collectors could not reach, and are
+                tagged <code className="text-[12px]">synthetic_estimate</code> so they can never be mistaken
+                for observed fares.
               </p>
-              <p>
-                <span className="font-semibold text-apix-text">Why not Laspeyres or Fisher?</span>{" "}
-                Both require quantity data we don&apos;t collect at this stage. One formula we
-                can fully defend beats two we&apos;d have to hedge on under questioning.
+            </Panel>
+          )}
+
+          {section === "cleaning" && (
+            <Panel title="Data cleaning" caption="Every rule below runs on real data before it reaches the index.">
+              <ol className="space-y-2.5 text-[13px] leading-relaxed text-apix-muted">
+                <li>
+                  <span className="font-semibold text-apix-text">Deduplication.</span> Exact duplicates — same
+                  route, date, fare and source — are removed, keeping the most recent scrape.
+                </li>
+                <li>
+                  <span className="font-semibold text-apix-text">Outlier flagging.</span> An IQR test with a
+                  2.5× multiplier runs within each route + booking-window group. Outliers are flagged, never
+                  deleted: a surge price is real data and belongs in a fare index.
+                </li>
+                <li>
+                  <span className="font-semibold text-apix-text">Component reconciliation.</span> Rows where
+                  base fare plus taxes deviate from the total by more than ₹50 are flagged as mismatched.
+                </li>
+                <li>
+                  <span className="font-semibold text-apix-text">Sold-out handling.</span> Sold-out quotes are
+                  excluded from fare statistics and the index — they carry no price — but are retained in the
+                  database and shown in the Data Explorer.
+                </li>
+                <li>
+                  <span className="font-semibold text-apix-text">Source invariant.</span> The source name is
+                  never null and never dropped, so every figure remains traceable to where it came from.
+                </li>
+              </ol>
+            </Panel>
+          )}
+
+          {section === "index" && (
+            <Panel title="Index calculation">
+              <div className="rounded-lg border border-apix-border bg-apix-surface-alt px-3 py-2.5 font-mono text-[12px] text-apix-text">
+                I(t) = I(t−1) × Π<sub>routes</sub> [ fare(r,t) / fare(r,t−1) ]<sup>w(r)</sup>
+              </div>
+              <div className="mt-4 space-y-3 text-[13px] leading-relaxed text-apix-muted">
+                <p>
+                  <span className="font-semibold text-apix-text">Why weighted, not a naive average?</span> A
+                  simple average treats a low-traffic route the same as a high-traffic one. Weighting by
+                  passenger share means the index moves in proportion to how many travellers are actually
+                  affected — the same principle behind CPI item weights.
+                </p>
+                <p>
+                  <span className="font-semibold text-apix-text">Why chain-linked?</span> A fixed base period
+                  drifts as market conditions shift. Monthly chain-linking resets the reference each month,
+                  keeping the series comparable to DGCA's published fare data — the approach used in India's
+                  GDP deflator.
+                </p>
+                <p>
+                  <span className="font-semibold text-apix-text">Why not Laspeyres or Fisher?</span> Both need
+                  quantity data this system does not collect. One formula that can be fully defended beats
+                  several that would each need hedging.
+                </p>
+                <p>
+                  <span className="font-semibold text-apix-text">Median, not mean, per cell.</span> Within a
+                  route and date the median fare is used, so a single extreme quote cannot move the index on
+                  its own.
+                </p>
+              </div>
+            </Panel>
+          )}
+
+          {section === "weights" && (
+            <Panel
+              title="Weighting method"
+              caption={m?.weights_data_source}
+            >
+              {m && <RouteWeightsTable weights={m.route_weights} />}
+              <p className="mt-3 text-[13px] leading-relaxed text-apix-muted">
+                Weights are each route's share of DGCA-reported passenger traffic. The busiest corridor
+                carries the largest weight because a fare spike there affects the most travellers. These are
+                published on this page rather than buried in code precisely because &quot;why these
+                weights?&quot; is the first question a reviewer should ask.
               </p>
-            </div>
-            <p className="mt-4 text-xs text-apix-muted">
-              Weights source: {apix.data.methodology.weights_data_source}
-            </p>
-          </section>
+            </Panel>
+          )}
 
-          <section aria-labelledby="sources-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-            <h2 id="sources-heading" className="text-lg font-bold text-apix-text">
-              Data sources
-            </h2>
-            <ul className="mt-2 space-y-1 text-sm text-apix-muted">
-              {apix.data.methodology.data_sources.map((source) => (
-                <li key={source}>{source}</li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+          {section === "validation" && (
+            <Panel
+              title="Cross-source validation"
+              caption="Percentage fare difference between independent sources for the same route and date."
+            >
+              {m && <CrossSourceStatsTable stats={m.cross_source_validation} />}
+              <p className="mt-3 text-[13px] leading-relaxed text-apix-muted">
+                If two independent collectors agree closely on the same route and date, neither is an
+                outlier and the index is unlikely to be an artefact of one website's quirks. A large or
+                widening spread is a signal to investigate before trusting the number.
+              </p>
+            </Panel>
+          )}
 
-      <div className="border-t border-apix-border pt-10">
-        <h2 className="text-xl font-bold text-apix-text">Compliance &amp; data collection</h2>
-        <p className="mt-1 text-sm text-apix-muted">
-          How the data is collected, and why — the direct answer to &quot;is this scraping
-          responsible?&quot;
-        </p>
-      </div>
-
-      <section aria-labelledby="airline-direct-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-        <h2 id="airline-direct-heading" className="text-lg font-bold text-apix-text">
-          Why airline-direct sites, not OTAs
-        </h2>
-        <p className="mt-2 text-sm text-apix-muted">
-          All major Indian OTAs (Ixigo, EaseMyTrip, Cleartrip, MakeMyTrip) explicitly disallow
-          automated access to their flight search result pages in robots.txt. Using
-          airline-direct sites (Air India, IndiGo) is the only polite and compliant approach
-          available for this prototype — and arguably a better methodology choice besides:
-          airline-direct prices are the source-of-truth fares, while OTA prices include markup
-          and can vary across agents.
-        </p>
-      </section>
-
-      <section aria-labelledby="robots-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-        <h2 id="robots-heading" className="text-lg font-bold text-apix-text">
-          Robots.txt review
-        </h2>
-        <p className="mt-1 text-sm text-apix-muted">Conducted 2026-08-24.</p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <caption className="sr-only">Robots.txt compliance review per site</caption>
-            <thead>
-              <tr className="border-b border-apix-border text-apix-muted">
-                <th scope="col" className="py-2 pr-4 font-medium">Site</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Relevant disallows</th>
-                <th scope="col" className="py-2 font-medium">Decision</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { site: "Air India", url: "airindia.com/robots.txt", disallows: "/bin/, company image assets, loyalty page", decision: "Permitted — flight search not disallowed" },
-                { site: "IndiGo", url: "goindigo.in/robots.txt", disallows: "Server error — unverified", decision: "Pending manual check before scraping" },
-                { site: "Ixigo", url: "ixigo.com/robots.txt", disallows: "/flights/search, /search/result/", decision: "Excluded" },
-                { site: "EaseMyTrip", url: "easemytrip.com/robots.txt", disallows: "/flight-search/listing*", decision: "Excluded" },
-                { site: "Cleartrip", url: "cleartrip.com/robots.txt", disallows: "/flights/search*", decision: "Excluded" },
-              ].map((row) => (
-                <tr key={row.site} className="border-b border-apix-border last:border-0 align-top">
-                  <td className="py-2.5 pr-4 font-medium text-apix-text">
-                    {row.site}
-                    <div className="text-xs font-normal text-apix-muted">{row.url}</div>
-                  </td>
-                  <td className="py-2.5 pr-4 text-apix-muted">{row.disallows}</td>
-                  <td className="py-2.5">{row.decision}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {section === "compliance" && (
+            <>
+              <Panel title="Why airline-direct sources, not OTAs">
+                <p className="text-[13px] leading-relaxed text-apix-muted">
+                  Every major Indian OTA — Ixigo, EaseMyTrip, Cleartrip, MakeMyTrip — explicitly disallows
+                  automated access to flight search results in robots.txt. Airline-direct sites are the only
+                  compliant option available, and are arguably the better methodological choice besides:
+                  direct prices are the source-of-truth fare, while OTA prices carry markup that varies by
+                  agent.
+                </p>
+              </Panel>
+              <Panel title="Robots.txt review" caption="Conducted 2026-08-24.">
+                <div className="thin-scroll overflow-x-auto">
+                  <table className="w-full min-w-[560px] text-left text-[12px]">
+                    <caption className="sr-only">Robots.txt compliance review per site</caption>
+                    <thead>
+                      <tr className="border-b border-apix-border text-apix-muted">
+                        <th scope="col" className="py-2 pr-4 font-medium">Site</th>
+                        <th scope="col" className="py-2 pr-4 font-medium">Relevant disallows</th>
+                        <th scope="col" className="py-2 font-medium">Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ROBOTS.map((r) => (
+                        <tr key={r.site} className="border-b border-apix-border align-top last:border-0">
+                          <td className="py-2 pr-4">
+                            <div className="font-semibold text-apix-text">{r.site}</div>
+                            <div className="text-[11px] text-apix-muted">{r.url}</div>
+                          </td>
+                          <td className="py-2 pr-4 text-apix-muted">{r.disallows}</td>
+                          <td className="py-2">
+                            <Badge tone={r.tone}>{r.decision}</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Panel>
+              <Panel title="Polite-guest rules">
+                <ul className="space-y-1.5 text-[13px] leading-relaxed text-apix-muted">
+                  <li className="flex items-start gap-2">
+                    <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apix-primary" aria-hidden="true" />
+                    Minimum three seconds between requests (four by default)
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apix-primary" aria-hidden="true" />
+                    Hard cap of six page loads per collector run
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apix-primary" aria-hidden="true" />
+                    Non-impersonating user agent identifying the research bot
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apix-primary" aria-hidden="true" />
+                    No booking, no login, no personal data — read-only fare pages
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ScrollText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apix-primary" aria-hidden="true" />
+                    Raw responses retained for an audit trail
+                  </li>
+                </ul>
+              </Panel>
+            </>
+          )}
         </div>
-      </section>
-
-      <section aria-labelledby="polite-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-        <h2 id="polite-heading" className="text-lg font-bold text-apix-text">
-          Polite-guest rules (non-negotiable)
-        </h2>
-        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-apix-muted">
-          <li>Delay between requests: minimum 3 seconds (4 seconds default)</li>
-          <li>Volume cap: maximum 6 page loads per scraper run (3 routes × 2 advance windows)</li>
-          <li>User-Agent: non-impersonating — identifies as APIxResearchBot/1.0 with educational purpose</li>
-          <li>No booking, no login, no personal data collected — read-only fare display pages only</li>
-          <li>Raw responses saved to data/raw/ for an audit trail</li>
-          <li>Purpose: educational research prototype for a government hackathon (SIH 26056), non-commercial</li>
-        </ul>
-      </section>
-
-      <section aria-labelledby="cleaning-rules-heading" className="rounded-2xl border border-apix-border bg-apix-surface p-6">
-        <h2 id="cleaning-rules-heading" className="text-lg font-bold text-apix-text">
-          Cleaning rules
-        </h2>
-        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-apix-muted">
-          <li>
-            <span className="font-medium text-apix-text">Deduplication:</span> exact duplicates
-            (same route + date + fare + source) removed, most recent scraped entry kept.
-          </li>
-          <li>
-            <span className="font-medium text-apix-text">Outlier flagging:</span> IQR method with
-            a 2.5× multiplier per route + advance window. Outliers are flagged, not deleted —
-            surge prices are real and relevant.
-          </li>
-          <li>
-            <span className="font-medium text-apix-text">Component reconciliation:</span> rows
-            where base fare + taxes deviate more than ₹50 from total fare are flagged as a
-            mismatch.
-          </li>
-          <li>
-            <span className="font-medium text-apix-text">Sold-out handling:</span> rows marked
-            sold out are excluded from the index but retained in the database.
-          </li>
-          <li>
-            <span className="font-medium text-apix-text">Source-name invariant:</span> never
-            null, never dropped — every record stays traceable to its source through every step.
-          </li>
-        </ol>
-      </section>
+      </div>
     </div>
   );
 }
