@@ -240,7 +240,7 @@ def compute_fare_summary(df: pd.DataFrame) -> dict:
     }
 
 
-def compute_fare_distribution(df: pd.DataFrame, bins: int = 10) -> pd.DataFrame:
+def compute_fare_distribution(df: pd.DataFrame, bins: int = 8) -> pd.DataFrame:
     """
     Histogram of total_fare -- shows the spread behind the averages, so a
     single mean never has to stand in for the whole distribution.
