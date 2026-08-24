@@ -12,7 +12,10 @@ from src.api.analytics import (
     compute_elasticity,
     compute_data_coverage,
     generate_summary_sentence,
+    compute_route_fare_history,
+    compute_route_contributions,
 )
+from src.index_engine.weights import ROUTE_WEIGHTS
 
 
 def make_df(rows: list[dict]) -> pd.DataFrame:
@@ -140,3 +143,82 @@ class TestGenerateSummarySentence:
         result = generate_summary_sentence(daily_df, pd.DataFrame())
         assert result["has_sufficient_data"] is True
         assert "moved by" in result["summary"]
+
+
+class TestComputeRouteFareHistory:
+    def test_filters_and_orders_by_date(self):
+        df = make_df([
+            {"travel_date": "2026-08-01", "route": "DEL-BOM", "total_fare": 5000.0, "source_name": "air_india_direct"},
+            {"travel_date": "2026-08-02", "route": "DEL-BOM", "total_fare": 5200.0, "source_name": "air_india_direct"},
+            {"travel_date": "2026-08-01", "route": "DEL-BLR", "total_fare": 4000.0, "source_name": "air_india_direct"},
+        ])
+        result = compute_route_fare_history(df, "DEL-BOM")
+        assert len(result) == 2
+        assert list(result["median_fare"]) == [5000.0, 5200.0]
+
+    def test_marks_estimated_when_only_synthetic(self):
+        df = make_df([
+            {"travel_date": "2026-08-01", "route": "DEL-BOM", "total_fare": 5000.0, "source_name": "synthetic_estimate"},
+        ])
+        result = compute_route_fare_history(df, "DEL-BOM")
+        assert result.iloc[0]["is_estimated"]
+
+    def test_not_estimated_when_any_real_present(self):
+        df = make_df([
+            {"travel_date": "2026-08-01", "route": "DEL-BOM", "total_fare": 5000.0, "source_name": "air_india_direct"},
+            {"travel_date": "2026-08-01", "route": "DEL-BOM", "total_fare": 5100.0, "source_name": "synthetic_estimate"},
+        ])
+        result = compute_route_fare_history(df, "DEL-BOM")
+        assert not result.iloc[0]["is_estimated"]
+
+    def test_no_match_returns_empty_with_columns(self):
+        df = make_df([
+            {"travel_date": "2026-08-01", "route": "DEL-BLR", "total_fare": 4000.0, "source_name": "air_india_direct"},
+        ])
+        result = compute_route_fare_history(df, "DEL-BOM")
+        assert result.empty
+        assert list(result.columns) == ["travel_date", "median_fare", "is_estimated"]
+
+
+class TestComputeRouteContributions:
+    def test_insufficient_data_under_two_dates(self):
+        daily_df = pd.DataFrame([
+            {"date": pd.Timestamp("2026-08-01"), "apix_value": 100.0, "per_route_fares": {"DEL-BOM": 5800.0}},
+        ])
+        result = compute_route_contributions(daily_df)
+        assert result["has_sufficient_data"] is False
+        assert result["contributions"] == []
+
+    def test_contributions_sum_to_total_log_change(self):
+        daily_df = pd.DataFrame([
+            {
+                "date": pd.Timestamp("2026-08-01"), "apix_value": 100.0,
+                "per_route_fares": {"DEL-BOM": 5800.0, "DEL-BLR": 5200.0, "BOM-BLR": 4600.0},
+            },
+            {
+                "date": pd.Timestamp("2026-08-02"), "apix_value": 103.0,
+                "per_route_fares": {"DEL-BOM": 6000.0, "DEL-BLR": 5200.0, "BOM-BLR": 4600.0},
+            },
+        ])
+        result = compute_route_contributions(daily_df)
+        assert result["has_sufficient_data"] is True
+        assert len(result["contributions"]) == len(ROUTE_WEIGHTS)
+
+        summed = sum(c["contribution"] for c in result["contributions"] if c["contribution"] is not None)
+        # total_log_change is intentionally rounded to 4dp by the function
+        assert abs(summed - result["total_log_change"]) < 1e-3
+
+        # DEL-BOM rose, the others held flat -- only DEL-BOM should contribute
+        del_bom = next(c for c in result["contributions"] if c["route"] == "DEL-BOM")
+        del_blr = next(c for c in result["contributions"] if c["route"] == "DEL-BLR")
+        assert del_bom["contribution"] > 0
+        assert del_blr["contribution"] == 0.0
+
+    def test_missing_route_fare_yields_none_contribution(self):
+        daily_df = pd.DataFrame([
+            {"date": pd.Timestamp("2026-08-01"), "apix_value": 100.0, "per_route_fares": {"DEL-BOM": 5800.0}},
+            {"date": pd.Timestamp("2026-08-02"), "apix_value": 100.0, "per_route_fares": {"DEL-BOM": 5800.0}},
+        ])
+        result = compute_route_contributions(daily_df)
+        del_blr = next(c for c in result["contributions"] if c["route"] == "DEL-BLR")
+        assert del_blr["contribution"] is None
