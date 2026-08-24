@@ -12,6 +12,10 @@ import type {
   FareQuotesResponse,
   QuotesFilters,
   SystemHealthResponse,
+  CatalogResponse,
+  OverviewResponse,
+  RouteStatsResponse,
+  RouteStatsFilters,
 } from "../types/apix";
 
 export const getApix = () => apiGet<ApixResponse>("/apix");
@@ -48,3 +52,18 @@ export const getFareQuotes = (filters: QuotesFilters) => {
 };
 
 export const getSystemHealth = () => apiGet<SystemHealthResponse>("/system/health");
+
+export const getCatalog = () => apiGet<CatalogResponse>("/apix/catalog");
+
+export const getOverview = () => apiGet<OverviewResponse>("/apix/overview");
+
+export const getRouteStats = (filters: RouteStatsFilters) => {
+  const params: Record<string, string> = {};
+  if (filters.route) params.route = filters.route;
+  if (filters.airline) params.airline = filters.airline;
+  if (filters.advance_purchase_days !== undefined)
+    params.advance_purchase_days = String(filters.advance_purchase_days);
+  if (filters.date_from) params.date_from = filters.date_from;
+  if (filters.date_to) params.date_to = filters.date_to;
+  return apiGet<RouteStatsResponse>("/apix/route-stats", params);
+};

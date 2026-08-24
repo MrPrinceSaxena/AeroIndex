@@ -245,3 +245,83 @@ export interface SystemHealthResponse {
   source_freshness: SourceFreshness[];
   generated_at: string;
 }
+
+// ─── Catalog (drives every filter dropdown) ─────────────────────────────
+
+export interface CatalogResponse {
+  routes: string[];
+  airlines: string[];
+  sources: string[];
+  advance_purchase_windows: number[];
+  date_min: string | null;
+  date_max: string | null;
+  generated_at: string;
+}
+
+// ─── Overview ───────────────────────────────────────────────────────────
+
+export interface WindowIndex {
+  advance_purchase_days: number;
+  latest_value: number;
+  change_pct: number | null;
+  is_estimated: boolean;
+  n_points: number;
+}
+
+export interface TopMover {
+  route: string;
+  pct_change: number;
+  fare_previous: number;
+  fare_latest: number;
+}
+
+export interface OverviewResponse {
+  latest_value: number | null;
+  latest_date: string | null;
+  base_date: string | null;
+  change_pct: number | null;
+  routes_monitored: number;
+  airlines_monitored: number;
+  total_quotes: number;
+  real_quotes: number;
+  synthetic_quotes: number;
+  index_by_window: WindowIndex[];
+  top_movers: TopMover[];
+  generated_at: string;
+}
+
+// ─── Route stats ────────────────────────────────────────────────────────
+
+export interface FareBucket {
+  bucket_start: number;
+  bucket_end: number;
+  count: number;
+}
+
+export interface AirlineStat {
+  carrier: string;
+  avg_fare: number;
+  min_fare: number;
+  max_fare: number;
+  n_fares: number;
+}
+
+export interface RouteStatsFilters {
+  route?: string;
+  airline?: string;
+  advance_purchase_days?: number;
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface RouteStatsResponse {
+  filters_applied: Record<string, string | number | null>;
+  avg_fare: number | null;
+  min_fare: number | null;
+  max_fare: number | null;
+  median_fare: number | null;
+  n_fares: number;
+  distribution: FareBucket[];
+  airlines: AirlineStat[];
+  generated_at: string;
+}
