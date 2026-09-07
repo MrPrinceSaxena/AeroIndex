@@ -137,7 +137,10 @@ def compute_route_fare_history(df: pd.DataFrame, route: str) -> pd.DataFrame:
     return history[["travel_date", "median_fare", "is_estimated"]]
 
 
-def compute_route_contributions(daily_df: pd.DataFrame) -> dict:
+def compute_route_contributions(
+    daily_df: pd.DataFrame,
+    weights: dict[str, float] | None = None,
+) -> dict:
     """
     How much each route contributed to the index's move between the latest
     two dates: weight * log(fare_latest / fare_previous) -- the exact same
@@ -145,10 +148,17 @@ def compute_route_contributions(daily_df: pd.DataFrame) -> dict:
     exposed per-route instead of collapsed into one number. Summing every
     route's contribution reconstructs the index's total log change.
 
+    Args:
+        daily_df: DataFrame with date, apix_value, per_route_fares columns.
+        weights: Route weights dict. If None, loads from route_basket via DB.
+                 Tests should pass explicit weights to avoid DB dependency.
+
     Needs >=2 dates of data to mean anything; returns
     has_sufficient_data=False with an empty list otherwise, same pattern as
     generate_summary_sentence().
     """
+    route_weights = weights if weights is not None else ROUTE_WEIGHTS
+
     if daily_df.empty or len(daily_df) < 2:
         return {"has_sufficient_data": False, "from_date": None, "to_date": None, "total_log_change": 0.0, "contributions": []}
 
@@ -159,7 +169,7 @@ def compute_route_contributions(daily_df: pd.DataFrame) -> dict:
 
     contributions = []
     total_log_change = 0.0
-    for route, weight in ROUTE_WEIGHTS.items():
+    for route, weight in route_weights.items():
         fare_prev = prev_fares.get(route)
         fare_latest = latest_fares.get(route)
         if fare_prev is not None and fare_latest is not None and fare_prev > 0:

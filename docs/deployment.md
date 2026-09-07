@@ -1,63 +1,98 @@
 # APIx Deployment Guide
 
-Two independently-deployed pieces: the FastAPI backend and the React
-frontend. Neither depends on the other at build time -- the frontend talks
-to the backend purely over HTTP at runtime via `VITE_API_BASE_URL`.
+APIx consists of two independently-deployed pieces:
+1. **FastAPI Backend**: Python REST API serving the index calculations, methodology metadata, and database queries.
+2. **React + Vite Frontend**: Modern TypeScript dashboard talking to the backend purely over HTTP via `VITE_API_BASE_URL`.
 
 ---
 
-## Backend (FastAPI) — Render or Railway
+## 🚀 Quick Deployment Guide
 
-Both are free-tier friendly and support Python + a `Procfile` out of the box.
+### Option A: 1-Click Render Blueprint (Recommended for Full Stack)
+1. Push your repository to GitHub.
+2. Log into [Render](https://render.com) and click **New +** -> **Blueprint**.
+3. Select your repository. Render will automatically read `render.yaml` and configure both the backend service and the frontend static site!
+4. Add your `DATABASE_URL` environment variable in the Render dashboard.
 
-1. Push this repo to GitHub (already done).
-2. Create a new Web Service on Render (or Railway) pointed at the repo.
-3. Build command: `pip install -r requirements.txt`
-4. Start command: the `Procfile` at the repo root already defines this —
-   `web: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT`
-5. Environment variables:
-   - `DATABASE_URL` — your Supabase/Neon connection string
-   - `CORS_ORIGINS` — the deployed frontend's URL (e.g.
-     `https://apix.vercel.app`). Comma-separate multiple origins if needed.
-     Leaving this unset defaults to `*`, which works but is not recommended
-     once the frontend has a real URL.
-6. After first deploy, run `python src/db/init_db.py` once (via the
-   platform's shell/console) to create the tables if they don't exist yet.
-7. Confirm `GET https://<your-backend-url>/health` returns `{"status": "ok", ...}`.
+---
 
-## Frontend (React + Vite) — Vercel or Netlify
+### Option B: Backend on Render / Railway
 
-Both auto-detect a Vite project and build correctly with zero config beyond
-the environment variable below.
+#### Backend on Render (Web Service):
+1. Create a **New Web Service** pointing to your GitHub repository.
+2. **Runtime**: `Python 3`
+3. **Build Command**: `pip install -r requirements.txt`
+4. **Start Command**: `uvicorn src.api.main:app --host 0.0.0.0 --port $PORT`
+5. **Health Check Path**: `/health`
+6. **Environment Variables**:
+   - `DATABASE_URL`: Your Supabase or Postgres connection string (e.g. `postgresql://postgres:...@...supabase.com:5432/postgres`)
+   - `CORS_ORIGINS`: Comma-separated list of allowed frontend URLs (e.g. `https://apix.vercel.app, https://apix.netlify.app`), or leave unset / `*` during initial testing.
+   - `PYTHON_VERSION`: `3.12.8`
+7. After the first deployment, run the schema setup in the Render Shell:
+   ```bash
+   python -m src.db.init_db
+   ```
+8. Verify health check: `GET https://<your-backend-url>/health` returns `{"status": "ok", "service": "APIx", "version": "0.2.0"}`.
 
-1. Import the repo, set the project root to `frontend/`.
-2. Build command: `npm run build` (already the default for a Vite project)
-3. Output directory: `dist`
-4. Environment variable: `VITE_API_BASE_URL` — the deployed backend's URL
-   from the step above (e.g. `https://apix-api.onrender.com`), no trailing
-   slash.
-5. SPA routing (React Router, client-side): both platforms need a rewrite so
-   deep links like `/routes` don't 404 on refresh.
-   - Vercel: `frontend/vercel.json` (already in the repo) handles this.
-   - Netlify: `frontend/public/_redirects` (already in the repo) handles this.
-6. Redeploy the backend's `CORS_ORIGINS` to include the frontend's final URL
-   once you know it (Vercel/Netlify assign a URL on first deploy).
+#### Backend on Railway:
+1. Click **New Project** -> **Deploy from GitHub repo**.
+2. Railway will automatically pick up `railway.toml` / `Procfile`.
+3. Set `DATABASE_URL` and `CORS_ORIGINS` in Railway Variables.
+4. Verify deployment at `https://<your-railway-domain>/health`.
 
-## Local development
+#### Backend with Docker (Any Cloud: Cloud Run, Fly.io, AWS, Azure, DigitalOcean):
+```bash
+# Build container image
+docker build -t apix-backend .
 
-Two terminals, from the repo root:
+# Run container locally or in cloud
+docker run -p 8000:8000 -e DATABASE_URL="<your-database-url>" -e CORS_ORIGINS="*" apix-backend
+```
+
+---
+
+### Option C: Frontend on Vercel / Netlify
+
+#### Frontend on Vercel:
+1. Import your GitHub repository in [Vercel](https://vercel.com).
+2. **Framework Preset**: `Vite` (auto-detected).
+3. **Root Directory**: `.` (or `frontend` — both work seamlessly thanks to root `vercel.json` and `package.json`).
+4. **Build Command**: `npm run build`
+5. **Output Directory**: `dist` (or `frontend/dist` if building from root).
+6. **Environment Variables**:
+   - `VITE_API_BASE_URL`: The deployed backend URL (e.g. `https://apix-backend.onrender.com` or `https://apix.up.railway.app`). No trailing slash needed.
+7. Click **Deploy**.
+
+#### Frontend on Netlify:
+1. Import your GitHub repository in [Netlify](https://netlify.com).
+2. Netlify will automatically detect `netlify.toml`.
+3. Set `VITE_API_BASE_URL` in **Site Settings** -> **Environment variables**.
+4. Click **Deploy Site**.
+
+---
+
+## 🛠️ Verification & Troubleshooting Checklist
+
+| Issue | Cause | Fix |
+|---|---|---|
+| **Vercel: "No package.json found"** | Vercel attempted to build root without monorepo config | Fixed: Root `package.json` and `vercel.json` now proxy commands automatically to `frontend/`. |
+| **Netlify: 404 on page refresh (/routes, /explorer)** | Client-side routing rewrite missing | Fixed: `netlify.toml` and `frontend/public/_redirects` rewrite all paths `/*` to `/index.html`. |
+| **Backend: "Invalid value for --port"** | `$PORT` environment variable unset | Fixed: `Procfile` uses `${PORT:-8000}`. |
+| **CORS blocked in browser console** | Frontend origin missing from `CORS_ORIGINS` | Set `CORS_ORIGINS` on backend to your frontend URL (e.g. `https://apix.vercel.app`), or `*`. |
+| **Database: "relation fare_quotes does not exist"** | Initial database schema not created | Run `python -m src.db.init_db` in the backend console. |
+| **Pytest: "No module named src"** | Pytest path resolution | Fixed: `pytest.ini` now automatically adds root to `pythonpath`. |
+
+---
+
+## 💻 Local Development
 
 ```bash
-# Terminal 1 — backend
+# Terminal 1 — Backend
 source .venv/bin/activate
 uvicorn src.api.main:app --reload
 
-# Terminal 2 — frontend
-cd frontend
+# Terminal 2 — Frontend
 npm run dev
+# or:
+cd frontend && npm run dev
 ```
-
-Frontend defaults to `http://localhost:8000` for the API if
-`VITE_API_BASE_URL` isn't set (see `frontend/.env.example`). Backend defaults
-CORS to `*` if `CORS_ORIGINS` isn't set, so the two talk to each other with
-no extra config in local dev.

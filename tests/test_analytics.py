@@ -20,7 +20,9 @@ from src.api.analytics import (
     compute_airline_stats,
     compute_top_movers,
 )
-from src.index_engine.weights import ROUTE_WEIGHTS
+# Explicit test weights — deliberately different from any past hardcoded values
+# to make clear these are test fixtures, not authoritative DGCA numbers.
+TEST_WEIGHTS = {"DEL-BOM": 0.45, "DEL-BLR": 0.30, "BOM-BLR": 0.25}
 
 
 def make_df(rows: list[dict]) -> pd.DataFrame:
@@ -205,9 +207,9 @@ class TestComputeRouteContributions:
                 "per_route_fares": {"DEL-BOM": 6000.0, "DEL-BLR": 5200.0, "BOM-BLR": 4600.0},
             },
         ])
-        result = compute_route_contributions(daily_df)
+        result = compute_route_contributions(daily_df, weights=TEST_WEIGHTS)
         assert result["has_sufficient_data"] is True
-        assert len(result["contributions"]) == len(ROUTE_WEIGHTS)
+        assert len(result["contributions"]) == len(TEST_WEIGHTS)
 
         summed = sum(c["contribution"] for c in result["contributions"] if c["contribution"] is not None)
         # total_log_change is intentionally rounded to 4dp by the function
@@ -224,7 +226,7 @@ class TestComputeRouteContributions:
             {"date": pd.Timestamp("2026-08-01"), "apix_value": 100.0, "per_route_fares": {"DEL-BOM": 5800.0}},
             {"date": pd.Timestamp("2026-08-02"), "apix_value": 100.0, "per_route_fares": {"DEL-BOM": 5800.0}},
         ])
-        result = compute_route_contributions(daily_df)
+        result = compute_route_contributions(daily_df, weights=TEST_WEIGHTS)
         del_blr = next(c for c in result["contributions"] if c["route"] == "DEL-BLR")
         assert del_blr["contribution"] is None
 
