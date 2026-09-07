@@ -5,9 +5,9 @@ export type BadgeTone = "neutral" | "info" | "success" | "warning" | "danger" | 
 const TONES: Record<BadgeTone, string> = {
   neutral: "bg-slate-100 text-slate-600",
   info: "bg-apix-primary-soft text-apix-primary",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-red-50 text-red-700",
+  success: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+  warning: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  danger: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
   estimated: "bg-apix-badge-bg text-apix-badge-text",
 };
 

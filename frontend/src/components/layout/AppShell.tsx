@@ -34,6 +34,7 @@ export function AppShell({ children }: AppShellProps) {
       )}
 
       <div className="flex min-h-screen flex-col lg:pl-[218px]">
+
         {/* Compact top bar — only carries the drawer toggle + brand below lg */}
         <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-apix-border bg-apix-surface/95 px-4 py-3 backdrop-blur lg:hidden">
           <button

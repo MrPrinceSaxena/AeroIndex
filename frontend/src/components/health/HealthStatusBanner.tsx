@@ -7,9 +7,9 @@ interface HealthStatusBannerProps {
 }
 
 const CONFIG: Record<OverallStatus, { label: string; bg: string; text: string; Icon: typeof CheckCircle2 }> = {
-  healthy: { label: "Healthy", bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", Icon: CheckCircle2 },
-  degraded: { label: "Degraded", bg: "bg-amber-50 border-amber-200", text: "text-amber-700", Icon: AlertTriangle },
-  down: { label: "Down", bg: "bg-red-50 border-red-200", text: "text-red-700", Icon: XCircle },
+  healthy: { label: "Healthy", bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50", text: "text-emerald-700 dark:text-emerald-400", Icon: CheckCircle2 },
+  degraded: { label: "Degraded", bg: "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900/50", text: "text-amber-700 dark:text-amber-400", Icon: AlertTriangle },
+  down: { label: "Down", bg: "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900/50", text: "text-red-700 dark:text-red-400", Icon: XCircle },
 };
 
 export function HealthStatusBanner({ status, dbConnectivity }: HealthStatusBannerProps) {
