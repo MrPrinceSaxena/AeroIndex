@@ -21,9 +21,9 @@ class TestCompare:
         assert result.empty
 
     def test_no_overlapping_month_returns_empty(self):
-        # DGCA_REFERENCE only covers 2023-04..2023-06 -- 2026 data never overlaps.
+        # A date outside DGCA_REFERENCE (e.g. 2025-01) never overlaps.
         daily_df = make_daily_df([
-            {"date": pd.Timestamp("2026-08-01"), "apix_value": 100.0,
+            {"date": pd.Timestamp("2025-01-01"), "apix_value": 100.0,
              "per_route_fares": {"DEL-BOM": 5800.0, "DEL-BLR": 5200.0, "BOM-BLR": 4600.0}},
         ])
         result = compare(daily_df)
@@ -53,16 +53,17 @@ class TestCompare:
 class TestDescribeComparison:
     def test_no_overlap_reports_both_periods_honestly(self):
         daily_df = make_daily_df([
-            {"date": pd.Timestamp("2026-08-01"), "apix_value": 100.0,
+            {"date": pd.Timestamp("2025-01-01"), "apix_value": 100.0,
              "per_route_fares": {"DEL-BOM": 5800.0}},
         ])
         comparison_df = compare(daily_df)
         result = describe_comparison(daily_df, comparison_df)
 
         assert result["has_overlap"] is False
-        assert result["live_data_period"] == "2026-08-01 to 2026-08-01"
+        assert result["live_data_period"] == "2025-01-01 to 2025-01-01"
         assert "2023-04" in result["reference_period"]
         assert len(result["reference_data"]) == len(DGCA_REFERENCE)
+
 
     def test_overlap_reports_true(self):
         daily_df = make_daily_df([
