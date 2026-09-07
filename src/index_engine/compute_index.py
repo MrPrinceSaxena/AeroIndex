@@ -30,6 +30,8 @@ Why this formula and not Laspeyres or Jevons:
 Base index value: 100.0 (set at the first date of available real data)
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 

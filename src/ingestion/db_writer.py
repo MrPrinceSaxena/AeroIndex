@@ -8,13 +8,16 @@ fare_quotes, so nothing in the pipeline runs without this step.
 """
 
 import os
+import hashlib
+import json
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 import psycopg2
 
 from src.db.connection import db_connection
-from psycopg2.extras import execute_values
+from psycopg2.extras import execute_values, Json
 
 from src.ingestion.connectors import FareRecord
 
@@ -35,8 +38,21 @@ def save_fare_records(records: list[FareRecord]) -> int:
     if not records:
         return 0
 
-    rows = [
-        (
+    now_iso = datetime.utcnow().isoformat()
+
+    rows = []
+    for r in records:
+        is_synthetic = r.source_name == 'synthetic_estimate'
+        data_origin = 'imputed' if is_synthetic else 'observed'
+        channel = 'synthetic' if is_synthetic else 'web'
+        raw_sha = hashlib.sha256(f"{r.route}:{r.carrier}:{r.travel_date}:{r.total_fare}:{now_iso}".encode()).hexdigest()
+        provenance = Json({
+            "raw_sha256": raw_sha,
+            "fetched_at": now_iso,
+            "source": r.source_name
+        })
+
+        rows.append((
             r.route,
             r.carrier,
             r.date_scraped,
@@ -47,10 +63,11 @@ def save_fare_records(records: list[FareRecord]) -> int:
             r.taxes,
             r.total_fare,
             r.source_name,
+            data_origin,
             r.is_sold_out,
-        )
-        for r in records
-    ]
+            channel,
+            provenance,
+        ))
 
     with db_connection() as conn:
         with conn.cursor() as cur:
@@ -59,7 +76,8 @@ def save_fare_records(records: list[FareRecord]) -> int:
                 """
                 INSERT INTO fare_quotes
                     (route, carrier, date_scraped, travel_date, advance_purchase_days,
-                     fare_class, base_fare, taxes, total_fare, source_name, is_sold_out)
+                     fare_class, base_fare, taxes, total_fare, source_name, data_origin, is_sold_out,
+                     channel, provenance)
                 VALUES %s
                 ON CONFLICT DO NOTHING;
                 """,
@@ -68,3 +86,4 @@ def save_fare_records(records: list[FareRecord]) -> int:
         conn.commit()
     print(f"Saved {len(rows)} fare_quotes records.")
     return len(rows)
+

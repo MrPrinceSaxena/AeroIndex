@@ -8,46 +8,118 @@
 */
 @theme {
   /* Brand / primary */
-  --color-apix-primary: #2563eb;
-  --color-apix-primary-dark: #1d4ed8;
-  --color-apix-primary-soft: #eff4ff;
-  --color-apix-primary-ring: #bfd4fe;
+  --color-apix-primary: var(--apix-primary);
+  --color-apix-primary-dark: var(--apix-primary-dark);
+  --color-apix-primary-soft: var(--apix-primary-soft);
+  --color-apix-primary-ring: var(--apix-primary-ring);
 
   /* Data semantics — never collapse these two into one colour */
-  --color-apix-real: #2563eb;
-  --color-apix-real-secondary: #60a5fa;
-  --color-apix-estimated: #f59e0b;
+  --color-apix-real: var(--apix-real);
+  --color-apix-real-secondary: var(--apix-real-secondary);
+  --color-apix-estimated: var(--apix-estimated);
 
   /* Surfaces */
-  --color-apix-bg: #f4f7fb;
-  --color-apix-surface: #ffffff;
-  --color-apix-surface-alt: #f8fafc;
-  --color-apix-border: #e5eaf1;
-  --color-apix-border-strong: #d3dbe6;
+  --color-apix-bg: var(--apix-bg);
+  --color-apix-surface: var(--apix-surface);
+  --color-apix-surface-alt: var(--apix-surface-alt);
+  --color-apix-border: var(--apix-border);
+  --color-apix-border-strong: var(--apix-border-strong);
 
   /* Text */
-  --color-apix-text: #0f172a;
-  --color-apix-text-soft: #334155;
-  --color-apix-muted: #64748b;
-  --color-apix-faint: #94a3b8;
+  --color-apix-text: var(--apix-text);
+  --color-apix-text-soft: var(--apix-text-soft);
+  --color-apix-muted: var(--apix-muted);
+  --color-apix-faint: var(--apix-faint);
 
   /* Status */
-  --color-apix-up: #dc2626;
-  --color-apix-down: #16a34a;
-  --color-apix-ok: #16a34a;
-  --color-apix-warn: #d97706;
-  --color-apix-danger: #dc2626;
-  --color-apix-badge-bg: #fef3c7;
-  --color-apix-badge-text: #92400e;
+  --color-apix-up: var(--apix-up);
+  --color-apix-down: var(--apix-down);
+  --color-apix-ok: var(--apix-ok);
+  --color-apix-warn: var(--apix-warn);
+  --color-apix-danger: var(--apix-danger);
+  --color-apix-badge-bg: var(--apix-badge-bg);
+  --color-apix-badge-text: var(--apix-badge-text);
 
   /* Categorical series — used for multi-line/multi-bar charts */
-  --color-apix-series-1: #2563eb;
-  --color-apix-series-2: #16a34a;
-  --color-apix-series-3: #d946ef;
-  --color-apix-series-4: #f59e0b;
-  --color-apix-series-5: #0891b2;
+  --color-apix-series-1: var(--apix-series-1);
+  --color-apix-series-2: var(--apix-series-2);
+  --color-apix-series-3: var(--apix-series-3);
+  --color-apix-series-4: var(--apix-series-4);
+  --color-apix-series-5: var(--apix-series-5);
 
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  --apix-primary: #2563eb;
+  --apix-primary-dark: #1d4ed8;
+  --apix-primary-soft: #eff4ff;
+  --apix-primary-ring: #bfd4fe;
+
+  --apix-real: #2563eb;
+  --apix-real-secondary: #60a5fa;
+  --apix-estimated: #f59e0b;
+
+  --apix-bg: #f4f7fb;
+  --apix-surface: #ffffff;
+  --apix-surface-alt: #f8fafc;
+  --apix-border: #e5eaf1;
+  --apix-border-strong: #d3dbe6;
+
+  --apix-text: #0f172a;
+  --apix-text-soft: #334155;
+  --apix-muted: #64748b;
+  --apix-faint: #94a3b8;
+
+  --apix-up: #dc2626;
+  --apix-down: #16a34a;
+  --apix-ok: #16a34a;
+  --apix-warn: #d97706;
+  --apix-danger: #dc2626;
+  --apix-badge-bg: #fef3c7;
+  --apix-badge-text: #92400e;
+
+  --apix-series-1: #2563eb;
+  --apix-series-2: #16a34a;
+  --apix-series-3: #d946ef;
+  --apix-series-4: #f59e0b;
+  --apix-series-5: #0891b2;
+}
+
+.dark {
+  --apix-primary: #3b82f6;
+  --apix-primary-dark: #2563eb;
+  --apix-primary-soft: #1e3a8a;
+  --apix-primary-ring: #1e40af;
+
+  --apix-real: #3b82f6;
+  --apix-real-secondary: #2563eb;
+  --apix-estimated: #fbbf24;
+
+  --apix-bg: #020617;
+  --apix-surface: #0f172a;
+  --apix-surface-alt: #1e293b;
+  --apix-border: #334155;
+  --apix-border-strong: #475569;
+
+  --apix-text: #f8fafc;
+  --apix-text-soft: #cbd5e1;
+  --apix-muted: #94a3b8;
+  --apix-faint: #475569;
+
+  --apix-up: #ef4444;
+  --apix-down: #22c55e;
+  --apix-ok: #22c55e;
+  --apix-warn: #f59e0b;
+  --apix-danger: #ef4444;
+  --apix-badge-bg: #451a03;
+  --apix-badge-text: #fef3c7;
+
+  --apix-series-1: #3b82f6;
+  --apix-series-2: #22c55e;
+  --apix-series-3: #e879f9;
+  --apix-series-4: #fbbf24;
+  --apix-series-5: #22d3ee;
 }
 
 :root {

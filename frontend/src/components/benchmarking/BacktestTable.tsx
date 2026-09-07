@@ -30,8 +30,8 @@ export function BacktestTable({ rows }: BacktestTableProps) {
                 <span
                   className={
                     row.deviation_flagged
-                      ? "inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"
-                      : "inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                      ? "inline-flex items-center rounded-md bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-semibold text-red-700 dark:text-red-400"
+                      : "inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
                   }
                 >
                   {row.deviation_pct}%
