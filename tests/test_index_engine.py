@@ -3,6 +3,11 @@ tests/test_index_engine.py
 
 Phase 3 validation -- exercises compute_daily_index / compute_weekly_index
 directly with an in-memory DataFrame, no database involved.
+
+compute_daily_index() accepts explicit weights via its `weights` parameter.
+Tests inject their own weights to avoid DB dependency. The exact values do
+not matter for the properties being tested (anchoring, monotonicity, flatness)
+as long as they sum to 1.0 and cover the routes in the test data.
 """
 
 from datetime import date
@@ -10,6 +15,10 @@ from datetime import date
 import pandas as pd
 
 from src.index_engine.compute_index import compute_daily_index, compute_weekly_index, BASE_INDEX
+
+# Explicit test weights — deliberately different from any past hardcoded values
+# to make clear these are test fixtures, not authoritative DGCA numbers.
+TEST_WEIGHTS = {"DEL-BOM": 0.45, "DEL-BLR": 0.30, "BOM-BLR": 0.25}
 
 
 def make_df(rows: list[dict]) -> pd.DataFrame:
@@ -25,7 +34,7 @@ class TestComputeDailyIndex:
             {"travel_date": "2026-08-01", "route": "DEL-BLR", "total_fare": 5200.0, "source_name": "air_india_direct"},
             {"travel_date": "2026-08-01", "route": "BOM-BLR", "total_fare": 4600.0, "source_name": "air_india_direct"},
         ])
-        result = compute_daily_index(df)
+        result = compute_daily_index(df, weights=TEST_WEIGHTS)
         assert result.iloc[0]["apix_value"] == BASE_INDEX
 
     def test_uniform_price_rise_moves_index_up(self):
@@ -37,7 +46,7 @@ class TestComputeDailyIndex:
                     "total_fare": fare * mult, "source_name": "air_india_direct",
                 })
         df = make_df(rows)
-        result = compute_daily_index(df)
+        result = compute_daily_index(df, weights=TEST_WEIGHTS)
         assert result.iloc[1]["apix_value"] > result.iloc[0]["apix_value"]
         # All routes rose by exactly 10% -> index should rise by ~10% regardless of weights
         assert abs(result.iloc[1]["apix_value"] - BASE_INDEX * 1.10) < 0.5
@@ -51,7 +60,7 @@ class TestComputeDailyIndex:
                     "total_fare": fare, "source_name": "air_india_direct",
                 })
         df = make_df(rows)
-        result = compute_daily_index(df)
+        result = compute_daily_index(df, weights=TEST_WEIGHTS)
         assert result.iloc[0]["apix_value"] == result.iloc[1]["apix_value"]
 
     def test_synthetic_data_flags_is_estimated(self):
@@ -60,7 +69,7 @@ class TestComputeDailyIndex:
             {"travel_date": "2026-08-01", "route": "DEL-BLR", "total_fare": 5200.0, "source_name": "air_india_direct"},
             {"travel_date": "2026-08-01", "route": "BOM-BLR", "total_fare": 4600.0, "source_name": "indigo_direct"},
         ])
-        result = compute_daily_index(df)
+        result = compute_daily_index(df, weights=TEST_WEIGHTS)
         assert result.iloc[0]["is_estimated"]
 
     def test_all_real_data_not_flagged_estimated(self):
@@ -69,7 +78,7 @@ class TestComputeDailyIndex:
             {"travel_date": "2026-08-01", "route": "DEL-BLR", "total_fare": 5200.0, "source_name": "indigo_direct"},
             {"travel_date": "2026-08-01", "route": "BOM-BLR", "total_fare": 4600.0, "source_name": "air_india_direct"},
         ])
-        result = compute_daily_index(df)
+        result = compute_daily_index(df, weights=TEST_WEIGHTS)
         assert not result.iloc[0]["is_estimated"]
 
     def test_empty_input_returns_empty_df(self):

@@ -69,14 +69,24 @@ def load_clean_fares() -> pd.DataFrame:
     return df
 
 
-def compute_daily_index(df: pd.DataFrame) -> pd.DataFrame:
+def compute_daily_index(
+    df: pd.DataFrame,
+    weights: dict[str, float] | None = None,
+) -> pd.DataFrame:
     """
     Compute the APIx index for each date in the dataset.
+
+    Args:
+        df: DataFrame with travel_date, route, total_fare, source_name columns.
+        weights: Route weights dict. If None, loads from route_basket via DB.
+                 Tests should pass explicit weights to avoid DB dependency.
 
     Returns a DataFrame with columns:
         date_scraped, apix_value, is_estimated (bool — True if synthetic data
         contributes to this day's index), per_route_fares (dict)
     """
+    route_weights = weights if weights is not None else ROUTE_WEIGHTS
+
     # Use median fare per route per date (more robust than mean to outliers)
     # Note: source_name is retained for transparency but averaged across sources
     daily = (
@@ -107,7 +117,7 @@ def compute_daily_index(df: pd.DataFrame) -> pd.DataFrame:
             records.append({
                 "date": dt,
                 "apix_value": round(index_value, 2),
-                "is_estimated": not all(real_by_route.get(r, False) for r in ROUTE_WEIGHTS),
+                "is_estimated": not all(real_by_route.get(r, False) for r in route_weights),
                 "per_route_fares": fare_by_route,
             })
             continue
@@ -115,7 +125,7 @@ def compute_daily_index(df: pd.DataFrame) -> pd.DataFrame:
         # Chain-linked weighted geometric mean step
         exponent_sum = 0.0
         covered_routes = []
-        for route, weight in ROUTE_WEIGHTS.items():
+        for route, weight in route_weights.items():
             if route in fare_by_route and route in prev_fare_by_route:
                 ratio = fare_by_route[route] / prev_fare_by_route[route]
                 exponent_sum += weight * np.log(ratio)
@@ -125,7 +135,7 @@ def compute_daily_index(df: pd.DataFrame) -> pd.DataFrame:
             index_value = index_value * np.exp(exponent_sum)
             prev_fare_by_route = fare_by_route
 
-        is_estimated = not all(real_by_route.get(r, False) for r in ROUTE_WEIGHTS)
+        is_estimated = not all(real_by_route.get(r, False) for r in route_weights)
 
         records.append({
             "date": dt,

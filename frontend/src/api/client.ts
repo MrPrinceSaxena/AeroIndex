@@ -3,7 +3,8 @@
 // any non-2xx response so callers (React Query hooks) get a useful message
 // instead of a generic "fetch failed".
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000";
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+const API_BASE_URL = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, "") : "http://localhost:8000";
 
 export class ApiError extends Error {
   status: number;
@@ -15,17 +16,37 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const url = new URL(path, API_BASE_URL);
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
+function buildUrl(path: string, params?: Record<string, string>): string {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (API_BASE_URL.startsWith("http://") || API_BASE_URL.startsWith("https://")) {
+    const url = new URL(`${API_BASE_URL}${cleanPath}`);
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.set(key, value);
+        }
+      }
     }
+    return url.toString();
   }
+
+  // Relative URL fallback (e.g. proxying or same-origin)
+  const base = API_BASE_URL ? `${API_BASE_URL}${cleanPath}` : cleanPath;
+  if (!params) return base;
+  const filteredParams = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== "",
+  );
+  if (filteredParams.length === 0) return base;
+  const query = "?" + new URLSearchParams(Object.fromEntries(filteredParams)).toString();
+  return `${base}${query}`;
+}
+
+export async function apiGet<T>(path: string, params?: Record<string, string>): Promise<T> {
+  const targetUrl = buildUrl(path, params);
 
   let response: Response;
   try {
-    response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+    response = await fetch(targetUrl, { headers: { Accept: "application/json" } });
   } catch {
     throw new ApiError(0, "Could not reach the APIx API. Is the backend running?");
   }
@@ -43,3 +64,4 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
 
   return (await response.json()) as T;
 }
+

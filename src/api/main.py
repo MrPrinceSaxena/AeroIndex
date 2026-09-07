@@ -79,11 +79,17 @@ app = FastAPI(
 
 # CORS_ORIGINS is a comma-separated list (e.g. the deployed frontend's URL in
 # production); defaults to "*" for local development against the Vite dev server.
-_cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+_cors_origins_raw = os.getenv("CORS_ORIGINS", "*").strip()
+if _cors_origins_raw == "*" or not _cors_origins_raw:
+    _cors_origins = ["*"]
+else:
+    _cors_origins = [o.strip().rstrip("/") for o in _cors_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_methods=["GET"],
+    allow_credentials=True if _cors_origins != ["*"] else False,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 

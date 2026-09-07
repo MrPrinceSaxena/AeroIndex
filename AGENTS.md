@@ -310,19 +310,13 @@ DGCA Benchmarking, Methodology, System Health).
    can actually be true against live data instead of always false.
 5. GitHub repo: https://github.com/MrPrinceSaxena/AeroIndex
 
-## Fixed across this session (2026-08-24)
-- src/db/init_db.py had an actual Python syntax error (unterminated string literal) — the
-  DB init script could not run at all. Fixed.
-- No code anywhere wrote FareRecord objects into fare_quotes — connectors and the synthetic
-  generator produced records that went nowhere. Added src/ingestion/db_writer.py.
-- compute_weekly_index()'s "week" column was a pandas Period object — not JSON-serializable,
-  so /apix 500'd on every request the first time it was actually hit with real data. Fixed
-  by stringifying it before it leaves compute_index.py.
-- The auto-generated "what this means" summary sentence had a grammar bug ("pushing the
-  APIx fell by X%") inherited from the original Streamlit code — fixed to use "up"/"down"
-  for the second clause instead of repeating the verb.
-- dashboard/app.py had a broken/truncated hint string, then was deleted entirely once the
-  React frontend replaced it.
-- Retired Streamlit; built an 8-page React SaaS frontend + 5 new backend endpoints +
-  ingestion_runs pipeline logging (see Phase 7 above for the full breakdown).
-- 85 backend tests passing (up from 9 before this session's work began), all offline.
+## Fixed across this session (2026-09-06)
+- **Frontend Monorepo Deployment (Vercel/Netlify)**: Added root `package.json`, root `vercel.json`, and root `netlify.toml` with SPA rewrites (`/* -> /index.html 200`), allowing Vercel and Netlify to deploy directly from root or from `frontend/` without build or 404 routing errors.
+- **Frontend API Client Resiliency**: Updated `frontend/src/api/client.ts` to normalize `API_BASE_URL` (trim whitespace, strip trailing slashes, support subpaths and relative URLs), preventing `Invalid URL` exceptions or misrouted requests.
+- **Frontend Bundle Optimization**: Configured Rollup `manualChunks` in `frontend/vite.config.ts` for clean vendor code-splitting (`vendor-react`, `vendor-charts`, `vendor-query`, `vendor-icons`), removing chunk size warnings.
+- **Backend CORS & Preflight**: Updated `src/api/main.py` CORS middleware to sanitize comma-separated `CORS_ORIGINS` (stripping whitespace and trailing slashes) and allow all HTTP methods (`allow_methods=["*"]`), ensuring browser preflight OPTIONS requests succeed seamlessly.
+- **Backend Port Fallback in Procfile**: Updated `Procfile` to `uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}`, allowing the server to start even if `$PORT` is unset in local or container environments.
+- **Multi-Cloud Deployment Configs**: Added `render.yaml` (Render Blueprint for full-stack 1-click deploy), `railway.toml` (Railway deploy), and a production `Dockerfile` + `.dockerignore` for containerized hosting on any cloud provider.
+- **Automated Testing & Paths**: Added `pytest.ini` with `pythonpath = .` and configured `asyncio_mode = strict`, `asyncio_default_fixture_loop_scope = function`, eliminating deprecation warnings and ensuring all 102 unit tests run out-of-the-box.
+- **Deployment Documentation**: Updated `docs/deployment.md` with a step-by-step multi-platform deployment guide and verification checklist.
+
