@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Menu, Plane } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { GovFooter } from "./GovFooter";
+import { ThemeToggle } from "../ThemeToggle";
 
 interface AppShellProps {
   children: ReactNode;
@@ -48,6 +49,9 @@ export function AppShell({ children }: AppShellProps) {
           </span>
           <span className="text-base font-extrabold tracking-tight text-apix-text">APIx</span>
           <span className="truncate text-xs text-apix-muted">Air Fare Price Index</span>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
 
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6 lg:px-7 lg:py-7">

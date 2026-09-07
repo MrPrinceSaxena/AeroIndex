@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useSystemHealth } from "../../hooks/useSystemHealth";
 import { relativeTime } from "../../utils/format";
+import { ThemeToggle } from "../ThemeToggle";
 
 interface NavItem {
   to: string;
@@ -64,16 +65,19 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
             India
           </div>
         </div>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close navigation"
-            className="rounded-lg p-1.5 text-apix-muted hover:bg-apix-surface-alt lg:hidden"
-          >
-            <X className="h-4.5 w-4.5" aria-hidden="true" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close navigation"
+              className="rounded-lg p-1.5 text-apix-muted hover:bg-apix-surface-alt lg:hidden"
+            >
+              <X className="h-4.5 w-4.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Nav */}
