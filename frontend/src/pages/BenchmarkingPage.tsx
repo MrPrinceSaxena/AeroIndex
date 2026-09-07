@@ -56,7 +56,7 @@ export function BenchmarkingPage() {
       {b && !b.has_overlap && (
         <Panel>
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-apix-warn">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/40 text-apix-warn">
               <AlertCircle className="h-4.5 w-4.5" aria-hidden="true" />
             </span>
             <div className="text-[13px] leading-relaxed text-apix-text-soft">

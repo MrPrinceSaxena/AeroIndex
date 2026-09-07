@@ -129,12 +129,11 @@ class TestWeights:
         assert abs(total - 1.0) < 1e-4
 
     def test_none_override_would_hit_db(self, monkeypatch):
-        # When override=None, get_route_weights must attempt DB access.
-        # Verify it calls load_route_weights_from_db / db_connection and fails if DB fails.
-        import src.db.connection as db_conn
-        def fail_conn(*args, **kwargs):
-            raise ConnectionError("DB unavailable")
-        monkeypatch.setattr(db_conn, "db_connection", fail_conn)
+        # Without a DB connection, get_route_weights(override=None) should
+        # attempt DB access and fail. This confirms no silent fallback.
+        from unittest.mock import MagicMock
+        monkeypatch.setattr("src.db.connection.db_connection", MagicMock(side_effect=ConnectionRefusedError("DB offline")))
         with pytest.raises(Exception):
             get_route_weights(override=None)
+
 

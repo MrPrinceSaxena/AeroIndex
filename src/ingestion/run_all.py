@@ -40,7 +40,8 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _log_step(run_id: uuid.UUID, step_name: str, started_at: datetime, records: int, error: Exception | None) -> None:
+from typing import Optional
+def _log_step(run_id: uuid.UUID, step_name: str, started_at: datetime, records: int, error: Optional[Exception]) -> None:
     try:
         log_run_step(
             run_id=run_id,

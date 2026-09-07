@@ -11,6 +11,8 @@ Streamlit dashboard (dashboard/app.py), now needed by src/api/main.py since
 the React frontend can only consume HTTP JSON, not run pandas itself.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 import numpy as np

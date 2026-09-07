@@ -45,8 +45,8 @@ export function SourceFreshnessTable({ sources, generatedAt, staleAfterHours = 4
                   <span
                     className={
                       stale
-                        ? "inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700"
-                        : "inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                        ? "inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400"
+                        : "inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
                     }
                   >
                     {stale ? "Stale" : "Fresh"}
