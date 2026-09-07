@@ -62,6 +62,7 @@ from src.api.quotes import load_fare_quotes_page
 from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_row_counts, check_db_connectivity
 from src.api.system_health import compute_overall_status
 from src.db.connection import close_pool
+from src.ingestion.scheduler import global_scheduler
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
@@ -94,10 +95,26 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def _startup_services() -> None:
+    """Start background daily scheduler if enabled."""
+    enable_sched = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
+    if enable_sched:
+        try:
+            global_scheduler.start()
+        except Exception as e:
+            print(f"[scheduler] Could not auto-start scheduler: {e}")
+
+
 @app.on_event("shutdown")
-def _close_db_pool() -> None:
-    """Release pooled Postgres connections when the API stops."""
+def _shutdown_services() -> None:
+    """Release pooled Postgres connections and shutdown background jobs when API stops."""
+    try:
+        global_scheduler.shutdown(wait=False)
+    except Exception:
+        pass
     close_pool()
+
 
 
 @app.exception_handler(Exception)
@@ -321,13 +338,21 @@ class TableRowCounts(BaseModel):
     ingestion_runs: int
 
 
+class SchedulerStatus(BaseModel):
+    is_running: bool = False
+    schedule: str = "Daily at 06:00 UTC"
+    next_run: str | None = None
+
+
 class SystemHealthResponse(BaseModel):
     db_connectivity: Literal["ok", "error"]
     overall_status: Literal["healthy", "degraded", "down"]
     row_counts: TableRowCounts
     recent_runs: list[IngestionRunRecord]
     source_freshness: list[SourceFreshness]
+    scheduler: SchedulerStatus | None = None
     generated_at: datetime
+
 
 
 class CatalogResponse(BaseModel):
@@ -792,8 +817,29 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
             )
             for s in source_freshness
         ],
+        scheduler=SchedulerStatus(
+            is_running=global_scheduler.is_running,
+            schedule="Daily at 06:00 UTC",
+            next_run="Every 24h at 06:00 UTC" if global_scheduler.is_running else "Stopped",
+        ),
         generated_at=datetime.utcnow(),
     )
+
+
+@app.post("/system/scheduler/trigger")
+async def trigger_scheduler_run():
+    """
+    Trigger an on-demand background extraction pipeline run.
+    Records will be logged to ingestion_runs in real-time.
+    """
+    import asyncio
+    asyncio.create_task(global_scheduler.trigger_now())
+    return {
+        "status": "triggered",
+        "message": "Live APIx extraction pipeline initiated in background.",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
 
 
 @app.get("/apix/catalog", response_model=CatalogResponse)

@@ -65,3 +65,39 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
   return (await response.json()) as T;
 }
 
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  const targetUrl = buildUrl(path);
+
+  let response: Response;
+  try {
+    response = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new ApiError(0, "Could not reach the APIx API. Is the backend running?");
+  }
+
+  if (!response.ok) {
+    let detail = `Request failed with status ${response.status}`;
+    try {
+      const errBody = await response.json();
+      if (typeof errBody?.detail === "string") detail = errBody.detail;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(response.status, detail);
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function triggerSchedulerRun(): Promise<{ status: string; message: string; timestamp: string }> {
+  return apiPost("/system/scheduler/trigger");
+}
+
+

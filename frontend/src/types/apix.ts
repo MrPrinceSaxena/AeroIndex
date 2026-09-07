@@ -240,16 +240,25 @@ export interface TableRowCounts {
   ingestion_runs: number;
 }
 
+export interface SchedulerStatus {
+  is_running: boolean;
+  schedule: string;
+  next_run?: string | null;
+}
+
 export type OverallStatus = "healthy" | "degraded" | "down";
 
 export interface SystemHealthResponse {
+
   db_connectivity: "ok" | "error";
   overall_status: OverallStatus;
   row_counts: TableRowCounts;
   recent_runs: IngestionRunRecord[];
   source_freshness: SourceFreshness[];
+  scheduler?: SchedulerStatus | null;
   generated_at: string;
 }
+
 
 // ─── Catalog (drives every filter dropdown) ─────────────────────────────
 
