@@ -1,0 +1,7 @@
+route,origin,destination,dgca_pax_annual,period,source_table
+DEL-BOM,DEL,BOM,5528000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1
+DEL-BLR,DEL,BLR,4146000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1
+BOM-BLR,BOM,BLR,3425000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1
+DEL-CCU,DEL,CCU,2810000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1
+BLR-HYD,BLR,HYD,2360000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1
+MAA-DEL,MAA,DEL,2215000,FY2023-24,DGCA City-Pair Scheduled Domestic Passenger Traffic FY2023-24 Table 1.1

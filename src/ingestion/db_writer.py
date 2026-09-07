@@ -7,6 +7,7 @@ downstream phase -- cleaning, the index engine, and the API all read from
 fare_quotes, so nothing in the pipeline runs without this step.
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -48,6 +49,9 @@ def save_fare_records(records: list[FareRecord]) -> int:
             r.total_fare,
             r.source_name,
             r.is_sold_out,
+            getattr(r, "data_origin", "imputed" if r.source_name == "synthetic_estimate" else "observed"),
+            getattr(r, "channel", "web_direct"),
+            json.dumps(r.provenance) if getattr(r, "provenance", None) else None,
         )
         for r in records
     ]
@@ -59,7 +63,8 @@ def save_fare_records(records: list[FareRecord]) -> int:
                 """
                 INSERT INTO fare_quotes
                     (route, carrier, date_scraped, travel_date, advance_purchase_days,
-                     fare_class, base_fare, taxes, total_fare, source_name, is_sold_out)
+                     fare_class, base_fare, taxes, total_fare, source_name, is_sold_out,
+                     data_origin, channel, provenance)
                 VALUES %s
                 ON CONFLICT DO NOTHING;
                 """,
@@ -68,3 +73,4 @@ def save_fare_records(records: list[FareRecord]) -> int:
         conn.commit()
     print(f"Saved {len(rows)} fare_quotes records.")
     return len(rows)
+

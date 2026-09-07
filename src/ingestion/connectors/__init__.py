@@ -43,6 +43,9 @@ class FareRecord:
     total_fare: float                # required -- this is what goes into the index
     source_name: str                 # REQUIRED -- never None, never just 'real'/'synthetic'
     is_sold_out: bool = False
+    data_origin: str = "observed"    # 'observed' or 'imputed'
+    channel: Optional[str] = "web_direct"
+    provenance: Optional[dict] = None
 
     def __post_init__(self):
         if self.route not in ROUTES:
@@ -54,6 +57,9 @@ class FareRecord:
             )
         if not self.source_name:
             raise ValueError("source_name is required and must not be empty")
+        if self.source_name == "synthetic_estimate" and self.data_origin == "observed":
+            self.data_origin = "imputed"
+
 
 
 class BaseConnector(ABC):
