@@ -26,6 +26,7 @@ rather than folded into /apix:
 Run: uvicorn src.api.main:app --reload
 """
 
+from __future__ import annotations
 import os
 from pathlib import Path
 from datetime import date, datetime
