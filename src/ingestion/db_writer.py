@@ -48,12 +48,20 @@ def save_fare_records(records: list[FareRecord]) -> int:
         raw_sha = hashlib.sha256(
             f"{r.route}:{r.carrier}:{r.travel_date}:{r.total_fare}:{now_iso}".encode()
         ).hexdigest()
-        prov_dict = getattr(r, "provenance", None) or {
+        prov_dict = {
             "raw_sha256": raw_sha,
             "fetched_at": now_iso,
             "source": r.source_name,
         }
+        if isinstance(getattr(r, "provenance", None), dict):
+            prov_dict.update(r.provenance)
+            if not prov_dict.get("raw_sha256"):
+                prov_dict["raw_sha256"] = raw_sha
+            if not prov_dict.get("fetched_at"):
+                prov_dict["fetched_at"] = now_iso
+
         provenance = Json(prov_dict)
+
 
         rows.append((
             r.route,

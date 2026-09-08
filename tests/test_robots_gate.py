@@ -130,17 +130,20 @@ class TestFailClosed:
 
     def test_spec_policy_allows_on_4xx(self):
         gate = RobotsGate(unreachable_policy="spec")
+        now_fresh = datetime.now(timezone.utc)
         gate._cache["https://nf.example"] = RobotsFile(
-            "https://nf.example/robots.txt", NOW, 404, None, fetch_error="HTTP 404"
+            "https://nf.example/robots.txt", now_fresh, 404, None, fetch_error="HTTP 404"
         )
         assert gate.check("https://nf.example/fares").allowed is True
 
     def test_spec_policy_denies_on_5xx(self):
         gate = RobotsGate(unreachable_policy="spec")
+        now_fresh = datetime.now(timezone.utc)
         gate._cache["https://err.example"] = RobotsFile(
-            "https://err.example/robots.txt", NOW, 503, None, fetch_error="HTTP 503"
+            "https://err.example/robots.txt", now_fresh, 503, None, fetch_error="HTTP 503"
         )
         assert gate.check("https://err.example/fares").allowed is False
+
 
 
 def test_query_string_is_part_of_the_matched_path():

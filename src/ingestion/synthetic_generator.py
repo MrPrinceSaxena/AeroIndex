@@ -44,13 +44,21 @@ DGCA_ROUTE_MEANS: dict[str, float] = {
     "DEL-BOM": 5800.0,
     "DEL-BLR": 5200.0,
     "BOM-BLR": 4600.0,
+    "DEL-CCU": 4900.0,
+    "BLR-HYD": 3700.0,
+    "MAA-DEL": 5100.0,
 }
+
 
 # Lead-time multipliers: fares rise as departure approaches
 LEAD_TIME_MULTIPLIER: dict[int, float] = {
+    45: 0.78,   # 45 days out — advance vacation discount
     30: 0.85,   # 30 days out — early-bird discount
-    7: 1.20,    # 7 days out — last-minute premium
+    15: 1.00,   # 15 days out — corporate booking baseline
+    7: 1.20,    # 7 days out — short-lead premium
+    1: 1.45,    # 1 day out — last-minute premium
 }
+
 
 # Approximate tax share of total fare (DGCA fare structure; base + YQ + UDF + PSF)
 TAX_FRACTION = 0.28  # ~28% of total fare is taxes; remainder is base fare
@@ -79,9 +87,10 @@ def generate_synthetic_record(
     if seed is not None:
         random.seed(seed)
 
-    base_mean = DGCA_ROUTE_MEANS[route]
-    multiplier = LEAD_TIME_MULTIPLIER[advance_purchase_days]
+    base_mean = DGCA_ROUTE_MEANS.get(route, 5000.0)
+    multiplier = LEAD_TIME_MULTIPLIER.get(advance_purchase_days, 1.0)
     noise = 1.0 + random.uniform(-NOISE_PCT, NOISE_PCT)
+
 
     total_fare = round(base_mean * multiplier * noise, 2)
     taxes = round(total_fare * TAX_FRACTION, 2)
