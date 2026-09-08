@@ -11,8 +11,11 @@ import {
   Activity,
   Plane,
   X,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { useSystemHealth } from "../../hooks/useSystemHealth";
+import { useAuth } from "../../context/AuthContext";
 import { relativeTime } from "../../utils/format";
 
 interface NavItem {
@@ -45,6 +48,7 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate, onClose }: SidebarProps) {
   const health = useSystemHealth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const latestIngest = health.data?.recent_runs?.[0]?.started_at ?? null;
   const status = health.data?.overall_status;
@@ -90,9 +94,8 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
         </div>
       </NavLink>
 
-
       {/* Nav */}
-      <nav className="thin-scroll flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Primary">
+      <nav className="thin-scroll flex-1 space-y-0.5 overflow-y-auto px-3 pb-2" aria-label="Primary">
         {NAV_ITEMS.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
@@ -120,32 +123,68 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Live status — real values from /system/health, never a static label */}
+      {/* User profile / session card */}
+      <div className="px-3 pb-2">
+        {isAuthenticated && user ? (
+          <div className="rounded-xl border border-apix-border bg-apix-surface-alt/70 p-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 text-xs font-bold text-white shadow-xs">
+                {user.avatar_initials || user.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-bold text-apix-text">{user.name}</div>
+                <div className="truncate text-[10px] font-semibold text-blue-600 dark:text-cyan-400 capitalize">
+                  {user.role} • {user.clearance_level.split(" ")[0]}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                title="Sign out"
+                className="rounded-lg p-1.5 text-apix-muted hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <NavLink
+            to="/login"
+            onClick={onNavigate}
+            className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-600 dark:text-cyan-400 hover:bg-blue-500/20 transition-colors"
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            <span>Sign In / Quick Pass</span>
+          </NavLink>
+        )}
+      </div>
+
+      {/* Live status — real values from /system/health */}
       <div className="px-3 pb-3">
-        <div className="rounded-xl border border-apix-border bg-apix-surface-alt px-3 py-2.5">
+        <div className="rounded-xl border border-apix-border bg-apix-surface-alt px-3 py-2">
           <div className="flex items-center gap-2">
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
                 status ? STATUS_DOT[status] : "bg-apix-faint"
               }`}
             />
-            <span className="text-[12px] font-semibold text-apix-text">
+            <span className="text-[11px] font-semibold text-apix-text">
               {health.isLoading ? "Checking…" : status ? `Pipeline ${status}` : "Pipeline unknown"}
             </span>
           </div>
-          <div className="mt-0.5 pl-4 text-[11px] text-apix-muted">
+          <div className="mt-0.5 pl-4 text-[10px] text-apix-muted">
             {latestIngest ? `Data updated ${relativeTime(latestIngest)}` : "No ingestion runs yet"}
           </div>
         </div>
       </div>
 
       {/* Government attribution */}
-      <div className="border-t border-apix-border px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-apix-surface-alt text-apix-muted">
-            <Landmark className="h-4 w-4" aria-hidden="true" />
+      <div className="border-t border-apix-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-apix-surface-alt text-apix-muted">
+            <Landmark className="h-3.5 w-3.5" aria-hidden="true" />
           </span>
-          <div className="min-w-0 text-[11px] leading-tight">
+          <div className="min-w-0 text-[10px] leading-tight">
             <div className="font-semibold text-apix-text-soft">Ministry of Civil Aviation</div>
             <div className="text-apix-muted">Government of India</div>
           </div>

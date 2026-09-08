@@ -4,7 +4,7 @@
 // instead of a generic "fetch failed".
 
 const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-const API_BASE_URL = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, "") : "http://localhost:8000";
+export const API_BASE_URL = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, "") : "http://localhost:8000";
 
 export class ApiError extends Error {
   status: number;

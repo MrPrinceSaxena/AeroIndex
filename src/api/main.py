@@ -63,8 +63,21 @@ from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_
 from src.api.system_health import compute_overall_status
 from src.db.connection import close_pool
 from src.ingestion.scheduler import global_scheduler
+from src.api.auth import (
+    SignUpRequest,
+    LoginRequest,
+    DemoLoginRequest,
+    UserProfile,
+    AuthResponse,
+    register_user,
+    authenticate_user,
+    authenticate_demo_persona,
+    get_user_from_token,
+    OFFICIAL_PERSONAS,
+)
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 
 Route = Literal["DEL-BOM", "DEL-BLR", "BOM-BLR"]
 
@@ -974,3 +987,88 @@ async def get_route_stats(
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "APIx", "version": "0.2.0"}
+
+
+# ─── Authentication & Persona Endpoints ─────────────────────────────────────
+
+@app.post("/auth/signup", response_model=AuthResponse)
+async def signup(req: SignUpRequest):
+    """Register a new user account with role-based clearance and generate JWT token."""
+    try:
+        profile, token = register_user(req)
+        return AuthResponse(
+            success=True,
+            message="Account created successfully. Welcome to APIx Aviation Intelligence.",
+            token=token,
+            user=profile,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Registration failed: {e}")
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(req: LoginRequest):
+    """Authenticate with official email and password."""
+    try:
+        profile, token = authenticate_user(req.email, req.password)
+        return AuthResponse(
+            success=True,
+            message="Authentication successful.",
+            token=token,
+            user=profile,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Login failed: {e}")
+
+
+@app.post("/auth/demo-login", response_model=AuthResponse)
+async def demo_login(req: DemoLoginRequest):
+    """Fast-track login for SIH evaluators and jury with pre-configured official personas."""
+    try:
+        profile, token = authenticate_demo_persona(req.persona_key)
+        return AuthResponse(
+            success=True,
+            message=f"Logged in as {profile.name} ({profile.role}).",
+            token=token,
+            user=profile,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Demo login failed: {e}")
+
+
+@app.get("/auth/me", response_model=UserProfile)
+async def get_current_user(request: Request):
+    """Validate Bearer token and return current user profile."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header.")
+    token = auth_header.split(" ", 1)[1].strip()
+    profile = get_user_from_token(token)
+    if not profile:
+        raise HTTPException(status_code=401, detail="Session expired or token invalid.")
+    return profile
+
+
+@app.get("/auth/personas")
+async def list_official_personas():
+    """Return list of official personas for evaluator quick-selection."""
+    personas_list = []
+    for key, p in OFFICIAL_PERSONAS.items():
+        personas_list.append({
+            "key": key,
+            "name": p["name"],
+            "email": p["email"],
+            "organization": p["organization"],
+            "role": p["role"],
+            "badge_title": p["badge_title"],
+            "clearance_level": p["clearance_level"],
+            "avatar_url": p.get("avatar_url"),
+        })
+    return {"personas": personas_list}
+
