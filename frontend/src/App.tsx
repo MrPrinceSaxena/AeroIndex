@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
+import { LandingPage } from "./pages/LandingPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { AirFareIndexPage } from "./pages/AirFareIndexPage";
 import { RouteAnalyticsPage } from "./pages/RouteAnalyticsPage";
@@ -11,21 +12,83 @@ import { SystemHealthPage } from "./pages/SystemHealthPage";
 
 function App() {
   return (
-    <AppShell>
-      <Routes>
-        <Route path="/" element={<OverviewPage />} />
-        <Route path="/index" element={<AirFareIndexPage />} />
-        <Route path="/routes" element={<RouteAnalyticsPage />} />
-        <Route path="/explorer" element={<DataExplorerPage />} />
-        <Route path="/data-quality" element={<DataQualityPage />} />
-        <Route path="/benchmarking" element={<BenchmarkingPage />} />
-        <Route path="/methodology" element={<MethodologyPage />} />
-        <Route path="/system-health" element={<SystemHealthPage />} />
-        {/* Retired page — redirect so no old link 404s */}
-        <Route path="/about" element={<Navigate to="/methodology" replace />} />
-      </Routes>
-    </AppShell>
+    <Routes>
+      {/* Standalone Futuristic Glassmorphism Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Dashboard Routes wrapped with AppShell */}
+      <Route
+        path="/overview"
+        element={
+          <AppShell>
+            <OverviewPage />
+          </AppShell>
+        }
+      />
+      <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
+      <Route
+        path="/index"
+        element={
+          <AppShell>
+            <AirFareIndexPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/routes"
+        element={
+          <AppShell>
+            <RouteAnalyticsPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/explorer"
+        element={
+          <AppShell>
+            <DataExplorerPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/data-quality"
+        element={
+          <AppShell>
+            <DataQualityPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/benchmarking"
+        element={
+          <AppShell>
+            <BenchmarkingPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/methodology"
+        element={
+          <AppShell>
+            <MethodologyPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path="/system-health"
+        element={
+          <AppShell>
+            <SystemHealthPage />
+          </AppShell>
+        }
+      />
+
+      {/* Legacy redirects */}
+      <Route path="/about" element={<Navigate to="/methodology" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
 export default App;
+
