@@ -1,0 +1,366 @@
+import { useState } from "react";
+import { Plane, Compass, ArrowRight, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+
+interface AirportNode {
+  code: string;
+  name: string;
+  city: string;
+  x: number;
+  y: number;
+  trafficShare: string;
+  tier: "Trunk" | "Metro" | "Regional";
+}
+
+const AIRPORTS: AirportNode[] = [
+  { code: "DEL", name: "Indira Gandhi Intl", city: "Delhi", x: 380, y: 220, trafficShare: "31.2%", tier: "Trunk" },
+  { code: "BOM", name: "Chhatrapati Shivaji Intl", city: "Mumbai", x: 260, y: 520, trafficShare: "22.4%", tier: "Trunk" },
+  { code: "BLR", name: "Kempegowda Intl", city: "Bengaluru", x: 340, y: 730, trafficShare: "14.8%", tier: "Trunk" },
+  { code: "HYD", name: "Rajiv Gandhi Intl", city: "Hyderabad", x: 380, y: 580, trafficShare: "8.6%", tier: "Metro" },
+  { code: "MAA", name: "Chennai Intl", city: "Chennai", x: 420, y: 740, trafficShare: "7.1%", tier: "Metro" },
+  { code: "CCU", name: "Netaji Subhash Chandra Bose Intl", city: "Kolkata", x: 680, y: 410, trafficShare: "6.9%", tier: "Metro" },
+  { code: "AMD", name: "Sardar Vallabhbhai Patel Intl", city: "Ahmedabad", x: 240, y: 410, trafficShare: "3.4%", tier: "Metro" },
+  { code: "GOI", name: "Dabolim / Mopa Intl", city: "Goa", x: 270, y: 650, trafficShare: "2.1%", tier: "Regional" },
+  { code: "COK", name: "Cochin Intl", city: "Kochi", x: 320, y: 840, trafficShare: "2.3%", tier: "Regional" },
+  { code: "GAU", name: "Lokpriya Gopinath Bordoloi Intl", city: "Guwahati", x: 820, y: 320, trafficShare: "1.2%", tier: "Regional" },
+];
+
+interface RouteItem {
+  id: string;
+  from: string;
+  to: string;
+  fare: string;
+  change: string;
+  isUp: boolean;
+  frequency: string;
+  path: string;
+}
+
+const ROUTES: RouteItem[] = [
+  {
+    id: "DEL-BOM",
+    from: "DEL",
+    to: "BOM",
+    fare: "₹6,230",
+    change: "↓ 4.2%",
+    isUp: false,
+    frequency: "64 flights/day",
+    path: "M 380 220 Q 300 350, 260 520",
+  },
+  {
+    id: "BLR-DEL",
+    from: "BLR",
+    to: "DEL",
+    fare: "₹5,840",
+    change: "↑ 7.1%",
+    isUp: true,
+    frequency: "48 flights/day",
+    path: "M 340 730 Q 400 480, 380 220",
+  },
+  {
+    id: "BOM-HYD",
+    from: "BOM",
+    to: "HYD",
+    fare: "₹4,120",
+    change: "↓ 2.8%",
+    isUp: false,
+    frequency: "32 flights/day",
+    path: "M 260 520 Q 320 540, 380 580",
+  },
+  {
+    id: "DEL-BLR",
+    from: "DEL",
+    to: "BLR",
+    fare: "₹5,150",
+    change: "↑ 3.4%",
+    isUp: true,
+    frequency: "42 flights/day",
+    path: "M 380 220 Q 370 500, 340 730",
+  },
+  {
+    id: "DEL-CCU",
+    from: "DEL",
+    to: "CCU",
+    fare: "₹4,890",
+    change: "↓ 1.5%",
+    isUp: false,
+    frequency: "28 flights/day",
+    path: "M 380 220 Q 530 280, 680 410",
+  },
+  {
+    id: "BOM-BLR",
+    from: "BOM",
+    to: "BLR",
+    fare: "₹3,940",
+    change: "↑ 2.2%",
+    isUp: true,
+    frequency: "36 flights/day",
+    path: "M 260 520 Q 290 630, 340 730",
+  },
+];
+
+export function InteractiveIndiaMapSection() {
+  const [activeAirport, setActiveAirport] = useState<AirportNode>(AIRPORTS[0]);
+  const [activeRoute, setActiveRoute] = useState<RouteItem>(ROUTES[0]);
+  const navigate = useNavigate();
+
+  return (
+    <section id="india-map" className="relative py-24 bg-slate-950 overflow-hidden border-t border-b border-white/10">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-cyan-300 backdrop-blur-md mb-3">
+              <Compass className="h-3.5 w-3.5 text-cyan-400" />
+              <span>National Corridor Radar</span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+              See India from{" "}
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-white bg-clip-text text-transparent">
+                the Sky.
+              </span>
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-slate-300 max-w-2xl">
+              Real-time flight movements, live corridor prices, and passenger load weighting mapped across India's premier aviation trunk routes.
+            </p>
+          </div>
+
+          {/* Quick Stats Pill */}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 p-3 backdrop-blur-xl">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-cyan-400">
+              <Plane className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-white">10 Hubs • 45+ Domestic Corridors</div>
+              <div className="text-[11px] text-slate-400">DGCA Annual Traffic Survey FY24 Aligned</div>
+            </div>
+          </div>
+        </div>
+
+        {/* The 3D Map Grid Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          {/* Left / Center: Interactive SVG Flight Route Canvas */}
+          <div className="lg:col-span-8 relative rounded-3xl border border-white/15 bg-slate-900/60 p-4 sm:p-8 backdrop-blur-2xl shadow-2xl overflow-hidden min-h-[520px] flex items-center justify-center">
+            
+            {/* Top Bar inside Map Canvas */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-xs text-slate-300 backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
+                <span className="font-semibold text-[11px]">Live Network Radar</span>
+              </div>
+              <div className="text-[11px] text-slate-400 font-mono">
+                AIRSPACE: INDIA DOMESTIC
+              </div>
+            </div>
+
+            {/* SVG India Flight Radar Canvas */}
+            <div className="relative w-full max-w-[700px] aspect-[4/3] flex items-center justify-center">
+              <svg
+                viewBox="100 100 800 800"
+                className="w-full h-full drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+              >
+                <defs>
+                  {/* Glowing Node Filter */}
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
+                    <stop offset="50%" stopColor="#818cf8" stopOpacity="0.7" />
+                    <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.9" />
+                  </linearGradient>
+                </defs>
+
+                {/* India Stylized Abstract Geometric Outlines */}
+                <path
+                  d="M 380 160 L 450 200 L 520 220 L 620 280 L 780 260 L 880 320 L 800 390 L 700 420 L 580 500 L 450 680 L 370 870 L 310 820 L 250 660 L 220 500 L 210 380 L 300 240 Z"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.08)"
+                  strokeWidth="2"
+                  strokeDasharray="4 4"
+                />
+
+                {/* Animated Flight Path Arcs */}
+                {ROUTES.map((r) => {
+                  const isActive = activeRoute.id === r.id;
+                  return (
+                    <g key={r.id}>
+                      <path
+                        d={r.path}
+                        fill="none"
+                        stroke={isActive ? "#38bdf8" : "rgba(147, 197, 253, 0.25)"}
+                        strokeWidth={isActive ? "3.5" : "1.8"}
+                        className="flight-path-animated cursor-pointer transition-all"
+                        onClick={() => setActiveRoute(r)}
+                        filter={isActive ? "url(#glow)" : undefined}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Airport Nodes */}
+                {AIRPORTS.map((a) => {
+                  const isSelected = activeAirport.code === a.code;
+                  return (
+                    <g
+                      key={a.code}
+                      transform={`translate(${a.x}, ${a.y})`}
+                      className="cursor-pointer group"
+                      onClick={() => setActiveAirport(a)}
+                    >
+                      {/* Outer pulse */}
+                      <circle
+                        r={isSelected ? "14" : "9"}
+                        fill="none"
+                        stroke={isSelected ? "#38bdf8" : "rgba(56, 189, 248, 0.4)"}
+                        strokeWidth="1.5"
+                        className="animate-ping opacity-50"
+                      />
+                      {/* Main Node Circle */}
+                      <circle
+                        r={isSelected ? "8" : "5"}
+                        fill={isSelected ? "#38bdf8" : "#1e40af"}
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                        filter="url(#glow)"
+                      />
+                      {/* Node Text Label */}
+                      <text
+                        x="12"
+                        y="4"
+                        fill={isSelected ? "#38bdf8" : "#cbd5e1"}
+                        fontSize="13"
+                        fontWeight="bold"
+                        className="font-mono tracking-wider drop-shadow-md"
+                      >
+                        {a.code}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Floating Live Fare Badges over Map */}
+            <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center gap-2 z-20">
+              {ROUTES.slice(0, 4).map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setActiveRoute(r)}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all backdrop-blur-xl border ${
+                    activeRoute.id === r.id
+                      ? "bg-blue-600/40 text-cyan-300 border-cyan-400 shadow-lg shadow-blue-500/30"
+                      : "bg-slate-950/80 text-slate-300 border-white/10 hover:bg-white/10"
+                  }`}
+                >
+                  <span>{r.from} → {r.to}</span>
+                  <span className="text-white font-black">{r.fare}</span>
+                  <span className={r.isUp ? "text-rose-400 text-[10px]" : "text-emerald-400 text-[10px]"}>
+                    {r.change}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+          </div>
+
+          {/* Right Column: Live Corridor Inspector Panel */}
+          <div className="lg:col-span-4 flex flex-col space-y-5">
+            
+            {/* Active Route Inspector Card */}
+            <div className="rounded-3xl border border-white/20 bg-gradient-to-b from-white/10 to-white/[0.02] p-6 backdrop-blur-2xl shadow-2xl">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <span className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+                  Corridor Inspector
+                </span>
+                <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                  Live Feed
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <div className="text-2xl font-black text-white flex items-center gap-2">
+                  <span>{activeRoute.from}</span>
+                  <Plane className="h-5 w-5 text-cyan-400 transform rotate-90" />
+                  <span>{activeRoute.to}</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Trunk Corridor • {activeRoute.frequency}
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-[11px] text-slate-400">Current Fare Index</div>
+                  <div className="text-2xl font-black text-white mt-0.5">{activeRoute.fare}</div>
+                  <div className={`text-[11px] font-bold mt-1 ${activeRoute.isUp ? "text-rose-400" : "text-emerald-400"}`}>
+                    {activeRoute.change} 24h Trend
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-[11px] text-slate-400">Advance Purchase</div>
+                  <div className="text-lg font-black text-white mt-0.5">T+7 / T+30</div>
+                  <div className="text-[11px] font-bold text-cyan-300 mt-1">
+                    Dual Basket Window
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 p-3 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-slate-300">
+                <div className="flex justify-between py-1 border-b border-white/5">
+                  <span className="text-slate-400">Primary Airline Feeds:</span>
+                  <span className="font-bold text-white">IndiGo & Air India Direct</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-white/5">
+                  <span className="text-slate-400">Tax Reconciliation:</span>
+                  <span className="font-bold text-emerald-400">Base + UDF Verified</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-slate-400">Outlier Filter:</span>
+                  <span className="font-bold text-cyan-300">1.5 × IQR Enforced</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate("/routes")}
+                className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3 text-xs font-bold text-white shadow-lg hover:shadow-cyan-500/25 transition-all"
+              >
+                <span>View Full Route Analytics</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Selected Airport Node Card */}
+            <div className="rounded-3xl border border-white/15 bg-slate-900/50 p-5 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-white">{activeAirport.name} ({activeAirport.code})</div>
+                  <div className="text-[11px] text-slate-400">{activeAirport.city} • {activeAirport.tier} Tier Hub</div>
+                </div>
+              </div>
+              <div className="mt-3 flex justify-between text-xs text-slate-300 pt-2 border-t border-white/10">
+                <span>DGCA National Traffic Volume Share:</span>
+                <span className="font-bold text-cyan-300">{activeAirport.trafficShare}</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+  );
+}

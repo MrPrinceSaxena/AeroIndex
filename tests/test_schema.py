@@ -33,8 +33,9 @@ class TestFareRecord:
     def test_invalid_route_raises(self):
         with pytest.raises(ValueError, match="Invalid route"):
             FareRecord(
-                route="DEL-CCU",  # not in our 3-route basket
+                route="DEL-JAI",  # not in our 6-route basket
                 carrier=None,
+
                 date_scraped=date(2024, 8, 1),
                 travel_date=date(2024, 8, 8),
                 advance_purchase_days=7,

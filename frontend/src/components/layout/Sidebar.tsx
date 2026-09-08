@@ -22,7 +22,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Overview", Icon: LayoutDashboard },
+  { to: "/overview", label: "Overview", Icon: LayoutDashboard },
   { to: "/index", label: "Air Fare Index", Icon: LineChart },
   { to: "/routes", label: "Route Analytics", Icon: Waypoints },
   { to: "/explorer", label: "Data Explorer", Icon: Table2 },
@@ -52,12 +52,21 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
   return (
     <div className="flex h-full flex-col bg-apix-surface">
       {/* Brand */}
-      <div className="flex items-start gap-3 px-5 py-5">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-apix-primary text-white shadow-sm">
+      <NavLink
+        to="/"
+        onClick={onNavigate}
+        className="group flex items-start gap-3 px-5 py-5 transition-colors hover:bg-apix-surface-alt"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-apix-primary text-white shadow-sm transition-transform group-hover:scale-105">
           <Plane className="h-5.5 w-5.5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-2xl leading-none font-extrabold tracking-tight text-apix-text">APIx</div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl leading-none font-extrabold tracking-tight text-apix-text">APIx</span>
+            <span className="rounded bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-300">
+              HOME
+            </span>
+          </div>
           <div className="mt-1 text-[11px] leading-tight text-apix-muted">
             Air Fare Price Index
             <br />
@@ -68,7 +77,10 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
           {onClose && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
               aria-label="Close navigation"
               className="rounded-lg p-1.5 text-apix-muted hover:bg-apix-surface-alt lg:hidden"
             >
@@ -76,7 +88,8 @@ export function Sidebar({ onNavigate, onClose }: SidebarProps) {
             </button>
           )}
         </div>
-      </div>
+      </NavLink>
+
 
       {/* Nav */}
       <nav className="thin-scroll flex-1 space-y-0.5 overflow-y-auto px-3 pb-4" aria-label="Primary">

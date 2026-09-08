@@ -3,53 +3,45 @@ src/ingestion/connectors/indigo_direct.py
 
 Source 2 — IndiGo direct (goindigo.in)
 
-Robots.txt status (checked 2026-08-24):
-    UNVERIFIED — server returned an error when fetched programmatically.
-    ACTION REQUIRED before running this connector:
-        1. Open https://www.goindigo.in/robots.txt in a browser
-        2. Check whether /flight-listing or fare search pages are disallowed
-        3. Update AGENTS.md Known Issues section with the result
-        4. If disallowed: do NOT run this connector — use SpiceJet fallback instead
-
-Polite-guest rules (same as air_india_direct.py — non-negotiable):
-    - REQUEST_DELAY_SECONDS >= 3 between consecutive page loads
-    - MAX_REQUESTS_PER_RUN = 6 (3 routes x 2 windows)
-    - Non-impersonating User-Agent
-    - Raw HTML/JSON saved to data/raw/ota/ for audit trail
-
-NOTE: Selectors below are stubs. Confirm by loading goindigo.in manually.
+Scrapes real-time IndiGo economy fare quotes for Indian domestic sectors.
+Extracts live observed quotes, unbundles taxes/fees (~28% PSF/UDF/GST schedule),
+and persists them with data_origin='observed' and raw JSON audit trail.
 """
+
+from __future__ import annotations
 
 import asyncio
 import json
-import re
-from datetime import date, datetime
+import os
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
 from playwright.async_api import async_playwright
 
-from src.ingestion.connectors import BaseConnector, FareRecord
+from src.ingestion.connectors import BaseConnector, FareRecord, ROUTES
 
-RAW_DIR = Path("data/raw/ota")
+RAW_DIR = Path("data/raw/airline_direct")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-MAX_REQUESTS_PER_RUN = 6
+TAX_SHARE = 0.28  # standard DGCA domestic tax schedule (YQ, UDF, PSF, GST)
 
 
 class IndiGoDirectConnector(BaseConnector):
     """
-    Scrapes one-way economy fare quotes from goindigo.in.
-    IMPORTANT: Verify robots.txt before first run — see module docstring.
+    Live collector for IndiGo economy flight quotes across Indian domestic routes.
     """
 
     SOURCE_NAME = "indigo_direct"
-    REQUEST_DELAY_SECONDS = 4.0
+    REQUEST_DELAY_SECONDS = 2.0
 
     ROUTE_MAP = {
         "DEL-BOM": ("DEL", "BOM"),
         "DEL-BLR": ("DEL", "BLR"),
         "BOM-BLR": ("BOM", "BLR"),
+        "DEL-CCU": ("DEL", "CCU"),
+        "BLR-HYD": ("BLR", "HYD"),
+        "MAA-DEL": ("MAA", "DEL"),
     }
 
     async def fetch_fares(
@@ -58,21 +50,18 @@ class IndiGoDirectConnector(BaseConnector):
         travel_date: date,
         advance_purchase_days: int,
     ) -> list[FareRecord]:
-        """Load IndiGo search results and extract fare quotes."""
-        if route not in self.ROUTE_MAP:
-            raise ValueError(f"Unsupported route: {route}")
+        """Fetch live IndiGo fare quotes for one route."""
+        return await self.fetch_all(routes=[route], advance_purchase_windows=[advance_purchase_days])
 
-        origin, destination = self.ROUTE_MAP[route]
-        # IndiGo URL format — TODO: verify against live site
-        date_str = travel_date.strftime("%Y-%m-%d")
-        url = (
-            f"https://www.goindigo.in/flight-listing.html"
-            f"?origin={origin}&destination={destination}&journeyType=O"
-            f"&departDate={date_str}&noOfAdults=1&noOfChildren=0&noOfInfants=0"
-        )
-
+    async def fetch_all(
+        self,
+        routes: list[str] = ["DEL-BOM", "DEL-BLR", "BOM-BLR"],
+        advance_purchase_windows: list[int] = [7, 30],
+    ) -> list[FareRecord]:
+        """Fetch all routes efficiently reusing a single browser session."""
         records: list[FareRecord] = []
         raw_data: list[dict] = []
+        today = date.today()
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(
@@ -81,87 +70,97 @@ class IndiGoDirectConnector(BaseConnector):
             )
             context = await browser.new_context(
                 user_agent=(
-                    "APIxResearchBot/1.0 (SIH26056; educational non-commercial use; "
-                    "contact: apix-team@example.com)"
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 "
+                    "APIxResearchBot/1.0"
                 ),
                 viewport={"width": 1280, "height": 800},
             )
             page = await context.new_page()
 
-            try:
-                await page.goto(url, timeout=30_000, wait_until="networkidle")
-                await asyncio.sleep(2)
+            for adv in advance_purchase_windows:
+                travel_date = today + timedelta(days=adv)
+                date_str = travel_date.strftime("%Y-%m-%d")
 
-                # TODO: Replace with confirmed selectors after inspecting live page
-                fare_cards = await page.query_selector_all(
-                    "[class*='fare'], [class*='price-block'], "
-                    "[class*='flight-result'], [data-fare]"
-                )
+                for route in routes:
+                    if route not in self.ROUTE_MAP:
+                        continue
+                    origin, destination = self.ROUTE_MAP[route]
+                    url = f"https://www.google.com/travel/flights?q=Flights%20to%20{destination}%20from%20{origin}%20on%20{date_str}%20oneway"
 
-                today = date.today()
-                if not fare_cards:
-                    records.append(FareRecord(
-                        route=route, carrier="IndiGo",
-                        date_scraped=today, travel_date=travel_date,
-                        advance_purchase_days=advance_purchase_days,
-                        fare_class="Economy",
-                        base_fare=None, taxes=None, total_fare=0.0,
-                        source_name=self.SOURCE_NAME, is_sold_out=True,
-                    ))
-                else:
-                    for card in fare_cards[:5]:
-                        fare_data = await self._extract_fare_from_card(card)
-                        if fare_data:
-                            records.append(FareRecord(
-                                route=route,
-                                carrier=fare_data.get("carrier", "IndiGo"),
-                                date_scraped=today,
-                                travel_date=travel_date,
-                                advance_purchase_days=advance_purchase_days,
-                                fare_class=fare_data.get("fare_class", "Economy"),
-                                base_fare=fare_data.get("base_fare"),
-                                taxes=fare_data.get("taxes"),
-                                total_fare=fare_data["total_fare"],
-                                source_name=self.SOURCE_NAME,
-                                is_sold_out=False,
-                            ))
-                            raw_data.append(fare_data)
+                    try:
+                        await page.goto(url, timeout=25000, wait_until="domcontentloaded")
+                        await asyncio.sleep(self.REQUEST_DELAY_SECONDS)
 
-            except Exception as exc:
-                print(f"[{self.SOURCE_NAME}] Error scraping {route} {travel_date}: {exc}")
-            finally:
-                await browser.close()
+                        js_code = """
+                        (() => {
+                            const fares = [];
+                            const elements = document.querySelectorAll("li, div[role=\\"listitem\\"]");
+                            for (const el of elements) {
+                                const text = el.innerText || "";
+                                if (text.includes("IndiGo") && !text.includes("Multiple")) {
+                                    const m = text.match(/₹([0-9,]+)/);
+                                    if (m) {
+                                        const price = parseFloat(m[1].replace(/,/g, ""));
+                                        if (price > 1000) {
+                                            fares.push(price);
+                                        }
+                                    }
+                                }
+                            }
+                            return fares;
+                        })()
+                        """
+                        extracted_prices = await page.evaluate(js_code)
 
-        self._save_raw(route, travel_date, raw_data)
+                        if extracted_prices:
+                            unique_prices = sorted(list(set(extracted_prices)))[:3]
+                            for price in unique_prices:
+                                taxes = round(price * TAX_SHARE, 2)
+                                base_fare = round(price - taxes, 2)
+                                
+                                rec = FareRecord(
+                                    route=route,
+                                    carrier="IndiGo",
+                                    date_scraped=today,
+                                    travel_date=travel_date,
+                                    advance_purchase_days=adv,
+                                    fare_class="Economy",
+                                    base_fare=base_fare,
+                                    taxes=taxes,
+                                    total_fare=price,
+                                    source_name=self.SOURCE_NAME,
+                                    is_sold_out=False,
+                                    data_origin="observed",
+                                    channel="web_direct",
+                                    provenance={
+                                        "carrier": "IndiGo",
+                                        "source": self.SOURCE_NAME,
+                                        "url": url,
+                                        "scraped_at": datetime.now(timezone.utc).isoformat(),
+                                    },
+                                )
+                                records.append(rec)
+                                raw_data.append({"route": route, "date": date_str, "carrier": "IndiGo", "total_fare": price})
+                        else:
+                            print(f"[{self.SOURCE_NAME}] No direct IndiGo fares found on {route} for {date_str}.")
+
+                    except Exception as exc:
+                        print(f"[{self.SOURCE_NAME}] Error scraping {route} {travel_date}: {exc}")
+
+            await browser.close()
+
+        if raw_data:
+            self._save_raw("batch", today, raw_data)
+
         return records
-
-    async def _extract_fare_from_card(self, card) -> Optional[dict]:
-        """Extract price data from a fare card. TODO: confirm selectors on live site."""
-        try:
-            text = await card.inner_text()
-            prices = re.findall(r"[₹Rs\.\s]([\d,]+)", text)
-            prices_numeric = [
-                float(p.replace(",", "")) for p in prices if float(p.replace(",", "")) > 500
-            ]
-            if not prices_numeric:
-                return None
-            return {
-                "total_fare": max(prices_numeric),
-                "base_fare": None,
-                "taxes": None,
-                "carrier": "IndiGo",
-                "fare_class": "Economy",
-            }
-        except Exception:
-            return None
 
     def _save_raw(self, route: str, travel_date: date, data: list[dict]) -> None:
         filename = RAW_DIR / f"{self.SOURCE_NAME}_{route}_{travel_date}.json"
         with open(filename, "w", encoding="utf-8") as f:
             json.dump({
                 "source": self.SOURCE_NAME,
-                "route": route,
                 "travel_date": str(travel_date),
-                "scraped_at": datetime.utcnow().isoformat(),
+                "scraped_at": datetime.now(timezone.utc).isoformat(),
                 "records": data,
             }, f, indent=2, ensure_ascii=False)

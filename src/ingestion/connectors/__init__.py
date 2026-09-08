@@ -21,8 +21,9 @@ from datetime import date
 from typing import Optional
 
 
-ROUTES = ["DEL-BOM", "DEL-BLR", "BOM-BLR"]
-ADVANCE_PURCHASE_DAYS = [7, 30]
+ROUTES = ["DEL-BOM", "DEL-BLR", "BOM-BLR", "DEL-CCU", "BLR-HYD", "MAA-DEL"]
+ADVANCE_PURCHASE_DAYS = [1, 7, 15, 30, 45]
+
 
 
 @dataclass
