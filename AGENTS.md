@@ -310,13 +310,14 @@ DGCA Benchmarking, Methodology, System Health).
    can actually be true against live data instead of always false.
 5. GitHub repo: https://github.com/MrPrinceSaxena/AeroIndex
 
-## Fixed across this session (2026-09-06)
+## Fixed across this session (2026-09-06 / 2026-09-08)
 - **Frontend Monorepo Deployment (Vercel/Netlify)**: Added root `package.json`, root `vercel.json`, and root `netlify.toml` with SPA rewrites (`/* -> /index.html 200`), allowing Vercel and Netlify to deploy directly from root or from `frontend/` without build or 404 routing errors.
 - **Frontend API Client Resiliency**: Updated `frontend/src/api/client.ts` to normalize `API_BASE_URL` (trim whitespace, strip trailing slashes, support subpaths and relative URLs), preventing `Invalid URL` exceptions or misrouted requests.
 - **Frontend Bundle Optimization**: Configured Rollup `manualChunks` in `frontend/vite.config.ts` for clean vendor code-splitting (`vendor-react`, `vendor-charts`, `vendor-query`, `vendor-icons`), removing chunk size warnings.
 - **Backend CORS & Preflight**: Updated `src/api/main.py` CORS middleware to sanitize comma-separated `CORS_ORIGINS` (stripping whitespace and trailing slashes) and allow all HTTP methods (`allow_methods=["*"]`), ensuring browser preflight OPTIONS requests succeed seamlessly.
 - **Backend Port Fallback in Procfile**: Updated `Procfile` to `uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}`, allowing the server to start even if `$PORT` is unset in local or container environments.
 - **Multi-Cloud Deployment Configs**: Added `render.yaml` (Render Blueprint for full-stack 1-click deploy), `railway.toml` (Railway deploy), and a production `Dockerfile` + `.dockerignore` for containerized hosting on any cloud provider.
-- **Automated Testing & Paths**: Added `pytest.ini` with `pythonpath = .` and configured `asyncio_mode = strict`, `asyncio_default_fixture_loop_scope = function`, eliminating deprecation warnings and ensuring all 102 unit tests run out-of-the-box.
-- **Deployment Documentation**: Updated `docs/deployment.md` with a step-by-step multi-platform deployment guide and verification checklist.
+- **Automated Testing & Paths**: Added `pytest.ini` with `pythonpath = .` and configured `asyncio_mode = strict`, `asyncio_default_fixture_loop_scope = function`, eliminating deprecation warnings and ensuring all 149 unit/integration tests run out-of-the-box (100% pass rate).
+- **Evaluator Evidence & Differentiation Dossier**: Generated comprehensive India-only evidence dossier (`docs/EVIDENCE_AND_DIFFERENTIATION_DOSSIER.md`) and compiled an executive 2-page print-ready PDF (`docs/APIx_Evaluator_Evidence_Dossier.pdf`) via Playwright, anchoring APIx in Parliamentary records (Rajya Sabha Dec 2025), MoSPI CPI Base 2024=100 releases, and comparisons against past hackathon archetypes.
+
 
