@@ -15,7 +15,7 @@ import hmac
 import hashlib
 import secrets
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 # Secret key for signing tokens
 JWT_SECRET = os.getenv("APIX_AUTH_SECRET", "apix-sih26056-cryptographic-auth-key-2026")

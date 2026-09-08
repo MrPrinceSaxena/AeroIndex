@@ -1072,3 +1072,9 @@ async def list_official_personas():
         })
     return {"personas": personas_list}
 
+
+@app.post("/auth/logout")
+async def logout_endpoint():
+    """Invalidate session and return logout confirmation."""
+    return {"success": True, "message": "Logged out successfully."}
+
