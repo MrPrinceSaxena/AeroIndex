@@ -12,11 +12,11 @@ import { LandingFooter } from "../components/landing/LandingFooter";
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 font-sans">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-blue-600 selection:text-white font-sans transition-colors duration-200">
       {/* Glassmorphic Sticky Top Navigation */}
       <LandingNavbar />
 
-      {/* 1. Cinematic Hero Section with Airplane Window & Floating Glass Card */}
+      {/* 1. Cinematic Hero Section with Bright Runway Airliner & Floating Glass Card */}
       <HeroSection />
 
       {/* 2. Impact Statistics & Animated Counters */}

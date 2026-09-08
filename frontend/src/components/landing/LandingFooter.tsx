@@ -2,17 +2,16 @@ import { Link } from "react-router-dom";
 import { Plane, Landmark, GitBranch } from "lucide-react";
 import { useSystemHealth } from "../../hooks/useSystemHealth";
 
-
 export function LandingFooter() {
   const health = useSystemHealth();
   const isHealthy = health.data?.overall_status === "healthy" || !health.isError;
 
   return (
-    <footer className="relative bg-slate-950 text-slate-400 text-xs border-t border-white/10 pt-16 pb-12 overflow-hidden">
+    <footer className="relative bg-slate-950 text-slate-400 text-xs border-t border-slate-800 pt-16 pb-12 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Main Footer Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800">
           
           {/* Brand & Attribution */}
           <div className="lg:col-span-2 space-y-4">
@@ -98,7 +97,6 @@ export function LandingFooter() {
                   <GitBranch className="h-3.5 w-3.5" />
                   <span>GitHub Repository</span>
                 </a>
-
               </li>
             </ul>
           </div>
@@ -109,11 +107,11 @@ export function LandingFooter() {
               Governance
             </h4>
             <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div className="text-[11px] font-bold text-white">MoSPI CPI 2024=100</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">Aligned with UN/ILO index manuals</div>
               </div>
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10">
+              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div className="text-[11px] font-bold text-white">DGCA Passenger Survey</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">FY2023-24 traffic weights</div>
               </div>
