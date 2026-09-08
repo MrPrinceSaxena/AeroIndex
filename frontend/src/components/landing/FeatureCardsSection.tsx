@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   LineChart,
   Waypoints,
@@ -12,6 +13,7 @@ import {
 
 export function FeatureCardsSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const features = [
     {
@@ -119,7 +121,13 @@ export function FeatureCardsSection() {
             return (
               <div
                 key={f.title}
-                onClick={() => navigate(f.link)}
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate(f.link);
+                  } else {
+                    navigate(`/login?redirect=${encodeURIComponent(f.link)}`);
+                  }
+                }}
                 className={`group relative flex flex-col justify-between rounded-3xl border border-slate-200/90 dark:border-white/15 bg-white/90 dark:bg-slate-900/60 p-7 backdrop-blur-2xl shadow-xl shadow-blue-950/5 transition-all duration-300 ${f.borderAccent} hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 cursor-pointer`}
               >
                 {/* Top Section */}

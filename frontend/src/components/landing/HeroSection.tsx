@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Plane,
   ArrowRight,
@@ -17,10 +18,18 @@ import {
   Zap,
 } from "lucide-react";
 
-
 export function HeroSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [selectedRoute, setSelectedRoute] = useState<"DEL-BOM" | "DEL-BLR" | "BOM-BLR">("DEL-BOM");
+
+  const goProtected = (path: string) => {
+    if (isAuthenticated) {
+      navigate(path);
+    } else {
+      navigate(`/login?redirect=${encodeURIComponent(path)}`);
+    }
+  };
 
   const routeData = {
     "DEL-BOM": {
@@ -112,16 +121,16 @@ export function HeroSection() {
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <button
-                onClick={() => navigate("/overview")}
+                onClick={() => goProtected("/overview")}
                 className="group relative inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span>Explore APIx</span>
+                <span>{isAuthenticated ? "Enter Console" : "Sign In & Explore"}</span>
                 <ArrowRight className="h-4 w-4 transform transition-transform group-hover:translate-x-1" />
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
               </button>
 
               <button
-                onClick={() => navigate("/index")}
+                onClick={() => goProtected("/index")}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-white/20 bg-white/80 dark:bg-white/10 hover:bg-white px-6 py-3.5 text-sm font-bold text-slate-900 dark:text-white backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-blue-400 hover:scale-[1.02]"
               >
                 <LineChart className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
@@ -299,7 +308,7 @@ export function HeroSection() {
 
                 {/* Card Footer CTA */}
                 <button
-                  onClick={() => navigate("/routes")}
+                  onClick={() => goProtected("/routes")}
                   className="mt-5 w-full flex items-center justify-between rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/20 dark:hover:bg-blue-600/40 border border-blue-200 dark:border-blue-400/30 p-2.5 text-xs font-bold text-blue-700 dark:text-cyan-300 transition-colors"
                 >
                   <span>Analyze {selectedRoute} corridor depth</span>
@@ -318,7 +327,7 @@ export function HeroSection() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           
           <button
-            onClick={() => navigate("/index")}
+            onClick={() => goProtected("/index")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-blue-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-cyan-400 mb-2 group-hover:scale-110 transition-transform">
@@ -329,7 +338,7 @@ export function HeroSection() {
           </button>
 
           <button
-            onClick={() => navigate("/routes")}
+            onClick={() => goProtected("/routes")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-indigo-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 mb-2 group-hover:scale-110 transition-transform">
@@ -340,7 +349,7 @@ export function HeroSection() {
           </button>
 
           <button
-            onClick={() => navigate("/explorer")}
+            onClick={() => goProtected("/explorer")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-cyan-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 mb-2 group-hover:scale-110 transition-transform">
@@ -351,7 +360,7 @@ export function HeroSection() {
           </button>
 
           <button
-            onClick={() => navigate("/data-quality")}
+            onClick={() => goProtected("/data-quality")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-emerald-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 mb-2 group-hover:scale-110 transition-transform">
@@ -362,7 +371,7 @@ export function HeroSection() {
           </button>
 
           <button
-            onClick={() => navigate("/benchmarking")}
+            onClick={() => goProtected("/benchmarking")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-amber-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 mb-2 group-hover:scale-110 transition-transform">
@@ -373,7 +382,7 @@ export function HeroSection() {
           </button>
 
           <button
-            onClick={() => navigate("/methodology")}
+            onClick={() => goProtected("/methodology")}
             className="group flex flex-col items-start p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 hover:bg-white hover:border-purple-400/60 backdrop-blur-xl transition-all duration-300 text-left shadow-xs hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 mb-2 group-hover:scale-110 transition-transform">

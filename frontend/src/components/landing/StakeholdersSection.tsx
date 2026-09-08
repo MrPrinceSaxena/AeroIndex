@@ -1,8 +1,10 @@
 import { Landmark, Plane, GraduationCap, Briefcase, ArrowRight, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export function StakeholdersSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const stakeholders = [
     {
@@ -132,7 +134,13 @@ export function StakeholdersSection() {
                 {/* Card CTA */}
                 <div className="mt-8 pt-5 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
                   <button
-                    onClick={() => navigate("/overview")}
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        navigate("/overview");
+                      } else {
+                        navigate(`/login?redirect=${encodeURIComponent("/overview")}`);
+                      }
+                    }}
                     className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-cyan-300 hover:text-blue-800 dark:hover:text-white transition-colors"
                   >
                     <span>Explore Solutions</span>

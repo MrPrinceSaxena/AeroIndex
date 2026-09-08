@@ -228,10 +228,10 @@ export function LandingNavbar() {
 
             {/* Primary Launch Dashboard CTA */}
             <button
-              onClick={() => navigate("/overview")}
+              onClick={() => navigate(isAuthenticated ? "/overview" : "/login?redirect=/overview")}
               className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-4.5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition-all duration-300 hover:shadow-cyan-500/30 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>Live Console</span>
+              <span>{isAuthenticated ? "Live Console" : "Access Console"}</span>
               <ArrowRight className="h-3.5 w-3.5 transform transition-transform group-hover:translate-x-1" />
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
             </button>
@@ -318,11 +318,11 @@ export function LandingNavbar() {
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    navigate("/overview");
+                    navigate(isAuthenticated ? "/overview" : "/login?redirect=/overview");
                   }}
                   className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 py-3 text-center text-sm font-bold text-white shadow-md"
                 >
-                  Enter Dashboard →
+                  {isAuthenticated ? "Enter Dashboard →" : "Sign In / Enter Dashboard →"}
                 </button>
               </div>
             </div>

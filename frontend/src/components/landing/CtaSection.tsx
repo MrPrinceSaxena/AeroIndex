@@ -1,8 +1,18 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { ArrowRight, LayoutDashboard, LineChart, Sparkles } from "lucide-react";
 
 export function CtaSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const goProtected = (path: string) => {
+    if (isAuthenticated) {
+      navigate(path);
+    } else {
+      navigate(`/login?redirect=${encodeURIComponent(path)}`);
+    }
+  };
 
   return (
     <section className="relative py-28 bg-gradient-to-b from-sky-100/60 via-blue-50/40 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden border-t border-slate-200/80 dark:border-white/10">
@@ -41,17 +51,17 @@ export function CtaSection() {
         {/* Action Buttons */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <button
-            onClick={() => navigate("/overview")}
+            onClick={() => goProtected("/overview")}
             className="group relative inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 px-8 py-4 text-sm font-bold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:shadow-cyan-500/40 hover:scale-105 active:scale-[0.98]"
           >
             <LayoutDashboard className="h-4 w-4" />
-            <span>Enter Dashboard</span>
+            <span>{isAuthenticated ? "Enter Dashboard" : "Sign In / Enter Dashboard"}</span>
             <ArrowRight className="h-4 w-4 transform transition-transform group-hover:translate-x-1" />
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
           </button>
 
           <button
-            onClick={() => navigate("/index")}
+            onClick={() => goProtected("/index")}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-white/20 bg-white/90 dark:bg-white/10 hover:bg-white px-7 py-4 text-sm font-bold text-slate-900 dark:text-white backdrop-blur-xl shadow-sm transition-all duration-300 hover:border-blue-400 hover:scale-105"
           >
             <LineChart className="h-4 w-4 text-blue-600 dark:text-cyan-400" />

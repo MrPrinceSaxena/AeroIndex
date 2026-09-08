@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plane, Compass, ArrowRight, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 interface AirportNode {
   code: string;
@@ -103,6 +104,7 @@ export function InteractiveIndiaMapSection() {
   const [activeAirport, setActiveAirport] = useState<AirportNode>(AIRPORTS[0]);
   const [activeRoute, setActiveRoute] = useState<RouteItem>(ROUTES[0]);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <section id="india-map" className="relative py-24 bg-gradient-to-b from-white via-sky-50/50 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden border-t border-b border-slate-200/80 dark:border-white/10">
@@ -330,7 +332,13 @@ export function InteractiveIndiaMapSection() {
               </div>
 
               <button
-                onClick={() => navigate("/routes")}
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate("/routes");
+                  } else {
+                    navigate(`/login?redirect=${encodeURIComponent("/routes")}`);
+                  }
+                }}
                 className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:shadow-cyan-500/30 transition-all"
               >
                 <span>View Full Route Analytics</span>

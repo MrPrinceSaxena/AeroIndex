@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   CheckCircle2,
   ArrowRight,
@@ -10,6 +11,7 @@ import {
 
 export function MethodologyTrustSection() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <section id="methodology" className="relative py-24 bg-gradient-to-b from-white via-sky-50/40 to-white dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden border-t border-slate-200/80 dark:border-white/10">
@@ -93,7 +95,13 @@ export function MethodologyTrustSection() {
 
             <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
               <button
-                onClick={() => navigate("/methodology")}
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate("/methodology");
+                  } else {
+                    navigate(`/login?redirect=${encodeURIComponent("/methodology")}`);
+                  }
+                }}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/30 dark:hover:bg-blue-600/50 border border-blue-200 dark:border-blue-400/30 px-5 py-2.5 text-xs font-bold text-blue-700 dark:text-cyan-300 transition-colors shadow-2xs"
               >
                 <span>Read Full Methodology Whitepaper</span>
