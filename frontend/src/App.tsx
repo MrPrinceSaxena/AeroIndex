@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AppShell } from "./components/layout/AppShell";
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
@@ -16,78 +17,94 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Standalone Futuristic Glassmorphism Landing Page */}
+        {/* Public Standalone Futuristic Glassmorphism Landing Page */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Authentication Gateway */}
+        {/* Public Authentication Gateway */}
         <Route path="/login" element={<AuthPage />} />
         <Route path="/signup" element={<AuthPage />} />
         <Route path="/auth" element={<AuthPage />} />
 
-        {/* Dashboard Routes wrapped with AppShell */}
+        {/* Protected Dashboard & Analytics Routes — Login Required */}
         <Route
           path="/overview"
           element={
-            <AppShell>
-              <OverviewPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <OverviewPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
         <Route
           path="/index"
           element={
-            <AppShell>
-              <AirFareIndexPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <AirFareIndexPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/routes"
           element={
-            <AppShell>
-              <RouteAnalyticsPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <RouteAnalyticsPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/explorer"
           element={
-            <AppShell>
-              <DataExplorerPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <DataExplorerPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/data-quality"
           element={
-            <AppShell>
-              <DataQualityPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <DataQualityPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/benchmarking"
           element={
-            <AppShell>
-              <BenchmarkingPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <BenchmarkingPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/methodology"
           element={
-            <AppShell>
-              <MethodologyPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <MethodologyPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/system-health"
           element={
-            <AppShell>
-              <SystemHealthPage />
-            </AppShell>
+            <ProtectedRoute>
+              <AppShell>
+                <SystemHealthPage />
+              </AppShell>
+            </ProtectedRoute>
           }
         />
 

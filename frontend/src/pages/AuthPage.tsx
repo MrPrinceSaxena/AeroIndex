@@ -20,6 +20,7 @@ export function AuthPage() {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const redirectTarget = searchParams.get("redirect") || "/overview";
 
   const navigate = useNavigate();
   const { login, signup, loginAsPersona, isAuthenticated } = useAuth();
@@ -36,12 +37,12 @@ export function AuthPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // If already authenticated, redirect to dashboard
+  // If already authenticated, redirect to destination
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/overview");
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectTarget]);
 
   // Calculate password strength
   const getPasswordStrength = (pass: string) => {
@@ -70,13 +71,13 @@ export function AuthPage() {
       if (mode === "login") {
         await login(email, password);
         setSuccessMsg("Signed in successfully. Redirecting...");
-        setTimeout(() => navigate("/overview"), 500);
+        navigate(redirectTarget, { replace: true });
       } else {
         if (!name.trim()) throw new Error("Please enter your full name.");
         if (password.length < 6) throw new Error("Password must be at least 6 characters.");
         await signup({ name, email, password, organization, role });
         setSuccessMsg("Account registered successfully. Redirecting...");
-        setTimeout(() => navigate("/overview"), 500);
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication error occurred.");
@@ -91,7 +92,7 @@ export function AuthPage() {
     try {
       await loginAsPersona(personaKey);
       setSuccessMsg("Fast-track authenticated as official persona.");
-      setTimeout(() => navigate("/overview"), 400);
+      navigate(redirectTarget, { replace: true });
     } catch (err: any) {
       setErrorMsg(err.message || "Demo login failed.");
     } finally {
