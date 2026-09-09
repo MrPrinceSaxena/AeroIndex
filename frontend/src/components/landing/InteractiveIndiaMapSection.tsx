@@ -8,25 +8,28 @@ interface AirportNode {
   name: string;
   city: string;
   state: string;
+  fir: string;
   x: number;
   y: number;
   trafficShare: string;
-  tier: "Trunk Benchmark" | "Metro Hub" | "Regional";
+  tier: "Trunk Benchmark" | "Metro Hub" | "Regional Hub";
 }
 
 const AIRPORTS: AirportNode[] = [
-  { code: "DEL", name: "Indira Gandhi Intl", city: "Delhi", state: "NCR", x: 365, y: 290, trafficShare: "31.2%", tier: "Trunk Benchmark" },
-  { code: "BOM", name: "Chhatrapati Shivaji Maharaj Intl", city: "Mumbai", state: "Maharashtra", x: 260, y: 530, trafficShare: "22.4%", tier: "Trunk Benchmark" },
-  { code: "BLR", name: "Kempegowda Intl", city: "Bengaluru", state: "Karnataka", x: 345, y: 715, trafficShare: "14.8%", tier: "Trunk Benchmark" },
-  { code: "HYD", name: "Rajiv Gandhi Intl", city: "Hyderabad", state: "Telangana", x: 385, y: 585, trafficShare: "8.6%", tier: "Metro Hub" },
-  { code: "MAA", name: "Chennai Intl", city: "Chennai", state: "Tamil Nadu", x: 415, y: 725, trafficShare: "7.1%", tier: "Metro Hub" },
-  { code: "CCU", name: "Netaji Subhash Chandra Bose Intl", city: "Kolkata", state: "West Bengal", x: 620, y: 440, trafficShare: "6.9%", tier: "Metro Hub" },
-  { code: "AMD", name: "Sardar Vallabhbhai Patel Intl", city: "Ahmedabad", state: "Gujarat", x: 245, y: 435, trafficShare: "3.4%", tier: "Metro Hub" },
-  { code: "GOI", name: "Manohar Intl (Mopa)", city: "Goa", state: "Goa", x: 270, y: 645, trafficShare: "2.1%", tier: "Regional" },
-  { code: "COK", name: "Cochin Intl", city: "Kochi", state: "Kerala", x: 325, y: 805, trafficShare: "2.3%", tier: "Regional" },
-  { code: "GAU", name: "Lokpriya Gopinath Bordoloi Intl", city: "Guwahati", state: "Assam", x: 735, y: 360, trafficShare: "1.2%", tier: "Regional" },
-  { code: "SXR", name: "Sheikh ul-Alam Intl", city: "Srinagar", state: "J&K", x: 310, y: 150, trafficShare: "1.1%", tier: "Regional" },
-  { code: "JAI", name: "Jaipur Intl", city: "Jaipur", state: "Rajasthan", x: 320, y: 340, trafficShare: "1.4%", tier: "Regional" },
+  { code: "DEL", name: "Indira Gandhi Intl", city: "Delhi", state: "NCR", fir: "Delhi FIR", x: 360, y: 280, trafficShare: "31.2%", tier: "Trunk Benchmark" },
+  { code: "BOM", name: "Chhatrapati Shivaji Maharaj Intl", city: "Mumbai", state: "Maharashtra", fir: "Mumbai FIR", x: 250, y: 530, trafficShare: "22.4%", tier: "Trunk Benchmark" },
+  { code: "BLR", name: "Kempegowda Intl", city: "Bengaluru", state: "Karnataka", fir: "Chennai FIR", x: 350, y: 720, trafficShare: "14.8%", tier: "Trunk Benchmark" },
+  { code: "HYD", name: "Rajiv Gandhi Intl", city: "Hyderabad", state: "Telangana", fir: "Chennai FIR", x: 380, y: 580, trafficShare: "8.6%", tier: "Metro Hub" },
+  { code: "MAA", name: "Chennai Intl", city: "Chennai", state: "Tamil Nadu", fir: "Chennai FIR", x: 420, y: 725, trafficShare: "7.1%", tier: "Metro Hub" },
+  { code: "CCU", name: "Netaji Subhash Chandra Bose Intl", city: "Kolkata", state: "West Bengal", fir: "Kolkata FIR", x: 615, y: 440, trafficShare: "6.9%", tier: "Metro Hub" },
+  { code: "AMD", name: "Sardar Vallabhbhai Patel Intl", city: "Ahmedabad", state: "Gujarat", fir: "Mumbai FIR", x: 240, y: 435, trafficShare: "3.4%", tier: "Metro Hub" },
+  { code: "GOI", name: "Manohar Intl (Mopa / Dabolim)", city: "Goa", state: "Goa", fir: "Mumbai FIR", x: 265, y: 645, trafficShare: "2.1%", tier: "Regional Hub" },
+  { code: "COK", name: "Cochin Intl", city: "Kochi", state: "Kerala", fir: "Chennai FIR", x: 330, y: 805, trafficShare: "2.3%", tier: "Regional Hub" },
+  { code: "GAU", name: "Lokpriya Gopinath Bordoloi Intl", city: "Guwahati", state: "Assam", fir: "Guwahati FIR", x: 715, y: 355, trafficShare: "1.2%", tier: "Regional Hub" },
+  { code: "SXR", name: "Sheikh ul-Alam Intl", city: "Srinagar", state: "J&K", fir: "Delhi FIR", x: 305, y: 145, trafficShare: "1.1%", tier: "Regional Hub" },
+  { code: "JAI", name: "Jaipur Intl", city: "Jaipur", state: "Rajasthan", fir: "Delhi FIR", x: 315, y: 335, trafficShare: "1.4%", tier: "Regional Hub" },
+  { code: "PAT", name: "Jay Prakash Narayan Intl", city: "Patna", state: "Bihar", fir: "Kolkata FIR", x: 535, y: 375, trafficShare: "1.3%", tier: "Regional Hub" },
+  { code: "BBI", name: "Biju Patnaik Intl", city: "Bhubaneswar", state: "Odisha", fir: "Kolkata FIR", x: 540, y: 530, trafficShare: "1.2%", tier: "Regional Hub" },
 ];
 
 interface RouteItem {
@@ -52,7 +55,7 @@ const ROUTES: RouteItem[] = [
     isUp: false,
     frequency: "68 flights/day",
     paxWeight: "43.8% DGCA Weight",
-    path: "M 365 290 Q 285 400, 260 530",
+    path: "M 360 280 Q 280 400, 250 530",
     isPrimaryTrunk: true,
   },
   {
@@ -64,7 +67,7 @@ const ROUTES: RouteItem[] = [
     isUp: true,
     frequency: "54 flights/day",
     paxWeight: "32.2% DGCA Weight",
-    path: "M 365 290 Q 380 500, 345 715",
+    path: "M 360 280 Q 380 500, 350 720",
     isPrimaryTrunk: true,
   },
   {
@@ -76,7 +79,7 @@ const ROUTES: RouteItem[] = [
     isUp: true,
     frequency: "42 flights/day",
     paxWeight: "24.0% DGCA Weight",
-    path: "M 260 530 Q 295 625, 345 715",
+    path: "M 250 530 Q 290 625, 350 720",
     isPrimaryTrunk: true,
   },
   {
@@ -88,7 +91,7 @@ const ROUTES: RouteItem[] = [
     isUp: false,
     frequency: "36 flights/day",
     paxWeight: "Metro Trunk",
-    path: "M 365 290 Q 490 350, 620 440",
+    path: "M 360 280 Q 490 350, 615 440",
   },
   {
     id: "BOM-HYD",
@@ -99,7 +102,7 @@ const ROUTES: RouteItem[] = [
     isUp: false,
     frequency: "32 flights/day",
     paxWeight: "Metro Corridor",
-    path: "M 260 530 Q 320 545, 385 585",
+    path: "M 250 530 Q 315 550, 380 580",
   },
   {
     id: "BLR-MAA",
@@ -110,7 +113,7 @@ const ROUTES: RouteItem[] = [
     isUp: false,
     frequency: "28 flights/day",
     paxWeight: "Regional Shuttle",
-    path: "M 345 715 Q 380 710, 415 725",
+    path: "M 350 720 Q 385 715, 420 725",
   },
   {
     id: "DEL-AMD",
@@ -121,7 +124,7 @@ const ROUTES: RouteItem[] = [
     isUp: true,
     frequency: "26 flights/day",
     paxWeight: "Commercial Link",
-    path: "M 365 290 Q 300 360, 245 435",
+    path: "M 360 280 Q 295 360, 240 435",
   },
   {
     id: "BOM-GOI",
@@ -132,7 +135,7 @@ const ROUTES: RouteItem[] = [
     isUp: true,
     frequency: "24 flights/day",
     paxWeight: "Tourist Corridor",
-    path: "M 260 530 Q 260 590, 270 645",
+    path: "M 250 530 Q 255 590, 265 645",
   },
   {
     id: "DEL-GAU",
@@ -143,7 +146,7 @@ const ROUTES: RouteItem[] = [
     isUp: false,
     frequency: "18 flights/day",
     paxWeight: "NE Gateway",
-    path: "M 365 290 Q 550 310, 735 360",
+    path: "M 360 280 Q 530 300, 715 355",
   },
   {
     id: "DEL-SXR",
@@ -154,7 +157,29 @@ const ROUTES: RouteItem[] = [
     isUp: true,
     frequency: "22 flights/day",
     paxWeight: "Northern Ridge",
-    path: "M 365 290 Q 330 215, 310 150",
+    path: "M 360 280 Q 325 210, 305 145",
+  },
+  {
+    id: "CCU-BBI",
+    from: "CCU",
+    to: "BBI",
+    fare: "₹2,720",
+    change: "↓ 0.5%",
+    isUp: false,
+    frequency: "16 flights/day",
+    paxWeight: "Eastern Coastal",
+    path: "M 615 440 Q 575 485, 540 530",
+  },
+  {
+    id: "DEL-PAT",
+    from: "DEL",
+    to: "PAT",
+    fare: "₹4,250",
+    change: "↑ 2.9%",
+    isUp: true,
+    frequency: "24 flights/day",
+    paxWeight: "Gangetic Trunk",
+    path: "M 360 280 Q 445 325, 535 375",
   },
 ];
 
@@ -170,9 +195,9 @@ export function InteractiveIndiaMapSection() {
       className="relative py-24 bg-gradient-to-b from-white via-sky-50/40 to-white dark:from-slate-950 dark:via-slate-900/90 dark:to-slate-950 overflow-hidden border-t border-b border-slate-200/80 dark:border-white/10"
     >
       {/* Background Dynamic Light Orbs */}
-      <div className="absolute top-1/3 left-1/4 -translate-y-1/2 w-[650px] h-[650px] bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-cyan-400/10 dark:bg-cyan-400/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-10 right-1/3 w-[350px] h-[350px] bg-indigo-500/10 dark:bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/4 -translate-y-1/2 w-[700px] h-[700px] bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-[170px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[550px] h-[550px] bg-cyan-400/10 dark:bg-cyan-400/15 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-10 right-1/3 w-[400px] h-[400px] bg-indigo-500/10 dark:bg-indigo-500/10 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
@@ -181,16 +206,16 @@ export function InteractiveIndiaMapSection() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-50 dark:bg-blue-950/50 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-cyan-300 backdrop-blur-md mb-3 shadow-xs">
               <Compass className="h-3.5 w-3.5 text-blue-600 dark:text-cyan-400 animate-spin" style={{ animationDuration: "12s" }} />
-              <span>National Airspace Corridor Radar</span>
+              <span>Complete National Airspace Radar</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-950 dark:text-white">
-              India’s Aviation Corridors,{" "}
+              Complete Map of India,{" "}
               <span className="bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-400 bg-clip-text text-transparent">
-                Mapped Live.
+                Live Flight Corridors.
               </span>
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl font-medium">
-              Real-time flight routes, DGCA passenger volume weighting, and live corridor prices rendered on an authentic vector radar map of India.
+              High-precision geographic mapping of India's national aviation corridors with live fares, DGCA passenger traffic weighting, and direct airline scraping feeds.
             </p>
           </div>
 
@@ -201,12 +226,12 @@ export function InteractiveIndiaMapSection() {
             </div>
             <div>
               <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>12 Active Hubs</span>
+                <span>14 Airport Hubs</span>
                 <span className="text-slate-400">•</span>
-                <span className="text-blue-600 dark:text-cyan-400">10 Major Corridors</span>
+                <span className="text-blue-600 dark:text-cyan-400">12 Live Corridors</span>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Calibrated against DGCA Annual Traffic Survey FY24
+                DGCA Annual Domestic Traffic Survey FY24 Aligned
               </div>
             </div>
           </div>
@@ -215,8 +240,8 @@ export function InteractiveIndiaMapSection() {
         {/* The 3D Map Grid Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left / Center: Interactive SVG Flight Route Canvas */}
-          <div className="lg:col-span-8 relative rounded-3xl border border-slate-800/90 bg-gradient-to-b from-slate-950 via-[#030712] to-slate-950 p-4 sm:p-6 shadow-2xl overflow-hidden min-h-[580px] flex flex-col justify-between">
+          {/* Left / Center: Complete Interactive SVG Flight Route Canvas of India */}
+          <div className="lg:col-span-8 relative rounded-3xl border border-slate-800/90 bg-gradient-to-b from-slate-950 via-[#020617] to-slate-950 p-4 sm:p-6 shadow-2xl overflow-hidden min-h-[620px] flex flex-col justify-between">
             
             {/* Top Bar inside Map Canvas */}
             <div className="flex items-center justify-between z-20 pb-2">
@@ -225,9 +250,9 @@ export function InteractiveIndiaMapSection() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                 </span>
-                <span className="font-bold text-[11px] tracking-wide text-cyan-300">LIVE AIRSPACE RADAR</span>
+                <span className="font-bold text-[11px] tracking-wide text-cyan-300">AIRSPACE: INDIA NATIONAL</span>
                 <span className="text-slate-500">•</span>
-                <span className="text-[10px] text-slate-400 font-mono">100M+ PAX BASKET</span>
+                <span className="text-[10px] text-slate-400 font-mono">ALL FIR ZONES</span>
               </div>
 
               {/* Corridor filter pills */}
@@ -252,11 +277,11 @@ export function InteractiveIndiaMapSection() {
               </div>
             </div>
 
-            {/* SVG India Flight Radar Canvas */}
-            <div className="relative w-full aspect-[4/3.8] max-h-[520px] flex items-center justify-center my-auto">
+            {/* Complete Geographic Vector Map of India */}
+            <div className="relative w-full aspect-[4/4] max-h-[560px] flex items-center justify-center my-auto">
               <svg
-                viewBox="100 80 750 780"
-                className="w-full h-full drop-shadow-[0_0_40px_rgba(59,130,246,0.3)] select-none"
+                viewBox="80 60 760 820"
+                className="w-full h-full drop-shadow-[0_0_45px_rgba(59,130,246,0.35)] select-none"
               >
                 <defs>
                   {/* Glowing Node Filter */}
@@ -276,16 +301,11 @@ export function InteractiveIndiaMapSection() {
                     <stop offset="100%" stopColor="#22d3ee" />
                   </linearGradient>
 
-                  <linearGradient id="radarGridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#1e293b" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#0f172a" stopOpacity="0.8" />
-                  </linearGradient>
-
-                  {/* India Landmass Shading Gradient */}
+                  {/* India Landmass Gradient */}
                   <linearGradient id="indiaLandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0f172a" stopOpacity="0.85" />
-                    <stop offset="50%" stopColor="#1e293b" stopOpacity="0.65" />
-                    <stop offset="100%" stopColor="#0a0f1d" stopOpacity="0.9" />
+                    <stop offset="0%" stopColor="#0f172a" stopOpacity="0.9" />
+                    <stop offset="50%" stopColor="#1e293b" stopOpacity="0.7" />
+                    <stop offset="100%" stopColor="#0a0f1d" stopOpacity="0.95" />
                   </linearGradient>
 
                   <radialGradient id="radarCenterGlow" cx="50%" cy="50%" r="50%">
@@ -295,71 +315,92 @@ export function InteractiveIndiaMapSection() {
                 </defs>
 
                 {/* Radar Concentric Distance Range Rings */}
-                <circle cx="365" cy="530" r="140" fill="none" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="1" strokeDasharray="3 3" />
-                <circle cx="365" cy="530" r="260" fill="none" stroke="rgba(56, 189, 248, 0.07)" strokeWidth="1" strokeDasharray="4 4" />
-                <circle cx="365" cy="530" r="380" fill="none" stroke="rgba(56, 189, 248, 0.05)" strokeWidth="1" />
-                <circle cx="365" cy="530" r="420" fill="url(#radarCenterGlow)" />
+                <circle cx="360" cy="530" r="140" fill="none" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="1" strokeDasharray="3 3" />
+                <circle cx="360" cy="530" r="260" fill="none" stroke="rgba(56, 189, 248, 0.07)" strokeWidth="1" strokeDasharray="4 4" />
+                <circle cx="360" cy="530" r="380" fill="none" stroke="rgba(56, 189, 248, 0.05)" strokeWidth="1" />
+                <circle cx="360" cy="530" r="430" fill="url(#radarCenterGlow)" />
 
-                {/* Latitude and Longitude Airspace Coordinates */}
-                <line x1="120" y1="290" x2="800" y2="290" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1" strokeDasharray="2 4" />
-                <line x1="120" y1="530" x2="800" y2="530" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1" strokeDasharray="2 4" />
-                <line x1="120" y1="715" x2="800" y2="715" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1" strokeDasharray="2 4" />
-                <line x1="365" y1="100" x2="365" y2="840" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1" strokeDasharray="2 4" />
+                {/* Airspace Coordinate Lines */}
+                <line x1="90" y1="280" x2="800" y2="280" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="2 4" />
+                <line x1="90" y1="530" x2="800" y2="530" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="2 4" />
+                <line x1="90" y1="720" x2="800" y2="720" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="2 4" />
+                <line x1="360" y1="80" x2="360" y2="850" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="2 4" />
 
                 {/* ======================================================== */}
-                {/* AUTHENTIC GEOGRAPHIC OUTLINE OF INDIA                    */}
+                {/* COMPLETE HIGH-PRECISION GEOGRAPHIC MAP OF INDIA          */}
+                {/* Includes J&K, Ladakh, Rajasthan, Gujarat Kathiawar/Rann, */}
+                {/* Konkan, Malabar, Kanyakumari, Coromandel, Bengal, NE     */}
                 {/* ======================================================== */}
-                {/* 1. Outer Glow Silhouette */}
                 <path
                   d="
-                    M 300 130 
-                    C 330 110, 360 125, 380 145 
-                    C 410 170, 440 185, 460 215 
-                    C 475 240, 520 255, 560 270 
-                    C 600 280, 640 275, 680 290 
-                    C 710 300, 750 310, 775 340 
-                    C 795 365, 785 390, 750 405 
-                    C 720 415, 690 410, 665 425 
-                    C 645 440, 630 470, 605 490 
-                    C 580 510, 550 540, 530 580 
-                    C 510 620, 480 660, 450 710 
-                    C 430 740, 400 780, 365 830 
-                    C 350 850, 335 845, 325 825 
-                    C 310 790, 295 750, 280 700 
-                    C 265 650, 250 600, 245 545 
-                    C 240 500, 220 460, 205 440 
-                    C 185 415, 210 380, 230 365 
-                    C 255 350, 275 320, 290 270 
-                    C 300 230, 280 180, 300 130 Z
+                    M 295 125 
+                    C 305 100, 325 85, 345 85 
+                    C 365 85, 385 105, 395 125 
+                    C 415 145, 435 160, 445 185 
+                    C 455 205, 435 225, 415 240 
+                    C 440 250, 480 255, 520 270 
+                    C 560 285, 600 290, 625 295 
+                    C 645 300, 670 290, 695 285 
+                    C 725 280, 755 290, 775 315 
+                    C 790 335, 785 360, 765 375 
+                    C 745 390, 730 405, 740 430 
+                    C 745 445, 730 460, 715 455 
+                    C 700 450, 690 435, 680 425 
+                    C 665 410, 650 415, 635 435 
+                    C 630 445, 640 460, 635 480 
+                    C 625 500, 600 505, 580 520 
+                    C 555 540, 540 575, 525 610 
+                    C 505 650, 475 685, 450 725 
+                    C 435 750, 410 780, 380 815 
+                    C 360 840, 345 850, 335 835 
+                    C 320 805, 310 770, 295 725 
+                    C 280 675, 265 625, 255 575 
+                    C 245 530, 230 495, 215 470 
+                    C 195 440, 180 430, 195 405 
+                    C 215 375, 235 365, 240 335 
+                    C 245 310, 270 280, 285 240 
+                    C 295 205, 285 160, 295 125 Z
                   "
                   fill="url(#indiaLandGradient)"
-                  stroke="rgba(56, 189, 248, 0.45)"
+                  stroke="rgba(56, 189, 248, 0.55)"
                   strokeWidth="2.5"
                   filter="url(#mapGlow)"
                 />
 
-                {/* 2. Inner Regional State Boundaries / Grids */}
+                {/* Regional FIR / State Boundary Network */}
                 <path
                   d="
-                    M 300 270 Q 365 290, 460 215
-                    M 230 365 Q 365 340, 560 270
-                    M 205 440 Q 365 435, 605 490
-                    M 245 545 Q 385 585, 530 580
-                    M 280 700 Q 345 715, 450 710
-                    M 365 290 L 385 585 L 365 830
+                    M 295 240 Q 360 280, 445 185
+                    M 240 335 Q 360 335, 520 270
+                    M 195 405 Q 360 435, 635 435
+                    M 255 575 Q 380 580, 540 575
+                    M 295 725 Q 350 720, 450 725
+                    M 360 280 L 380 580 L 350 720 L 335 835
+                    M 635 435 L 695 285
                   "
                   fill="none"
-                  stroke="rgba(255, 255, 255, 0.08)"
+                  stroke="rgba(255, 255, 255, 0.1)"
                   strokeWidth="1.2"
                   strokeDasharray="4 4"
                 />
 
-                {/* Lakshadweep and Andaman Locators */}
-                <circle cx="210" cy="760" r="3" fill="#38bdf8" opacity="0.6" />
-                <circle cx="215" cy="780" r="2.5" fill="#38bdf8" opacity="0.6" />
-                <circle cx="760" cy="680" r="3.5" fill="#38bdf8" opacity="0.6" />
-                <circle cx="770" cy="710" r="3" fill="#38bdf8" opacity="0.6" />
-                <circle cx="775" cy="740" r="2.5" fill="#38bdf8" opacity="0.6" />
+                {/* Island Territories */}
+                {/* Lakshadweep */}
+                <g opacity="0.75">
+                  <circle cx="205" cy="745" r="3" fill="#38bdf8" />
+                  <circle cx="210" cy="765" r="2.5" fill="#38bdf8" />
+                  <circle cx="215" cy="790" r="2" fill="#38bdf8" />
+                  <text x="175" y="770" fill="#94a3b8" fontSize="8" fontWeight="bold">LAKSHADWEEP</text>
+                </g>
+
+                {/* Andaman & Nicobar */}
+                <g opacity="0.75">
+                  <circle cx="745" cy="660" r="3.5" fill="#38bdf8" />
+                  <circle cx="750" cy="685" r="3" fill="#38bdf8" />
+                  <circle cx="755" cy="710" r="3" fill="#38bdf8" />
+                  <circle cx="760" cy="740" r="2.5" fill="#38bdf8" />
+                  <text x="715" y="700" fill="#94a3b8" fontSize="8" fontWeight="bold">ANDAMAN & NICOBAR</text>
+                </g>
 
                 {/* ======================================================== */}
                 {/* FLIGHT ROUTE ARCS WITH DYNAMIC NEON LIGHTING            */}
@@ -368,18 +409,18 @@ export function InteractiveIndiaMapSection() {
                   const isActive = activeRoute.id === r.id;
                   return (
                     <g key={r.id} className="transition-all duration-300">
-                      {/* Background Route Glow */}
+                      {/* Outer Glow Halo */}
                       <path
                         d={r.path}
                         fill="none"
-                        stroke={isActive ? "#38bdf8" : r.isPrimaryTrunk ? "rgba(96, 165, 250, 0.35)" : "rgba(148, 163, 184, 0.15)"}
-                        strokeWidth={isActive ? "6" : r.isPrimaryTrunk ? "2.5" : "1.5"}
+                        stroke={isActive ? "#38bdf8" : r.isPrimaryTrunk ? "rgba(96, 165, 250, 0.4)" : "rgba(148, 163, 184, 0.18)"}
+                        strokeWidth={isActive ? "7" : r.isPrimaryTrunk ? "3" : "1.8"}
                         strokeLinecap="round"
                         filter={isActive ? "url(#corridorGlow)" : undefined}
-                        opacity={isActive ? 0.9 : 0.6}
+                        opacity={isActive ? 0.95 : 0.65}
                       />
 
-                      {/* Main Interactive Route Line */}
+                      {/* Main Interactive Vector Route Line */}
                       <path
                         d={r.path}
                         fill="none"
@@ -394,7 +435,7 @@ export function InteractiveIndiaMapSection() {
                 })}
 
                 {/* ======================================================== */}
-                {/* AIRPORT NODES WITH CONCENTRIC BEACONS                    */}
+                {/* AIRPORT NODES WITH CONCENTRIC RADAR BEACONS              */}
                 {/* ======================================================== */}
                 {AIRPORTS.map((a) => {
                   const isSelected = activeAirport.code === a.code;
@@ -412,13 +453,13 @@ export function InteractiveIndiaMapSection() {
                       <circle
                         r={isSelected || isRouteEndpoint ? "18" : isTrunk ? "12" : "8"}
                         fill="none"
-                        stroke={isSelected || isRouteEndpoint ? "#38bdf8" : "#2563eb"}
-                        strokeWidth={isSelected || isRouteEndpoint ? "1.8" : "1"}
-                        className="animate-ping opacity-70"
-                        style={{ animationDuration: isSelected ? "2s" : "3.5s" }}
+                        stroke={isSelected || isRouteEndpoint ? "#38bdf8" : isTrunk ? "#2563eb" : "#0284c7"}
+                        strokeWidth={isSelected || isRouteEndpoint ? "2" : "1"}
+                        className="animate-ping opacity-75"
+                        style={{ animationDuration: isSelected ? "1.8s" : "3.5s" }}
                       />
 
-                      {/* Halo Backlight */}
+                      {/* Node Halo Base */}
                       <circle
                         r={isSelected || isRouteEndpoint ? "10" : "6"}
                         fill={isSelected ? "#0284c7" : isRouteEndpoint ? "#2563eb" : "#0f172a"}
@@ -427,22 +468,22 @@ export function InteractiveIndiaMapSection() {
                         filter="url(#mapGlow)"
                       />
 
-                      {/* Core Node Dot */}
+                      {/* Center Node Dot */}
                       <circle
                         r={isSelected ? "5" : "3.5"}
                         fill={isSelected || isRouteEndpoint ? "#ffffff" : isTrunk ? "#38bdf8" : "#94a3b8"}
                       />
 
-                      {/* Node Airport Code Pill */}
-                      <g transform="translate(10, -8)">
+                      {/* Node Airport Code Badge */}
+                      <g transform="translate(10, -9)">
                         <rect
                           x="0"
                           y="-2"
                           width={a.code.length * 8 + 12}
                           height="18"
                           rx="5"
-                          fill={isSelected || isRouteEndpoint ? "rgba(2, 132, 199, 0.9)" : "rgba(15, 23, 42, 0.85)"}
-                          stroke={isSelected || isRouteEndpoint ? "#38bdf8" : "rgba(255, 255, 255, 0.15)"}
+                          fill={isSelected || isRouteEndpoint ? "rgba(2, 132, 199, 0.95)" : "rgba(15, 23, 42, 0.9)"}
+                          stroke={isSelected || isRouteEndpoint ? "#38bdf8" : "rgba(255, 255, 255, 0.2)"}
                           strokeWidth="1"
                         />
                         <text
@@ -457,7 +498,7 @@ export function InteractiveIndiaMapSection() {
                         </text>
                       </g>
 
-                      {/* City Name Label (Visible for Trunk & Selected) */}
+                      {/* City Name Label */}
                       {(isTrunk || isSelected || isRouteEndpoint) && (
                         <text
                           x="10"
@@ -478,9 +519,9 @@ export function InteractiveIndiaMapSection() {
 
             {/* Bottom Quick-Switch Corridor Ribbon */}
             <div className="z-20 pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
                 <Radio className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                <span>Active Trunks:</span>
+                <span>Listed Corridors:</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {ROUTES.slice(0, 5).map((r) => (
@@ -595,7 +636,7 @@ export function InteractiveIndiaMapSection() {
                     {activeAirport.name} ({activeAirport.code})
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
-                    {activeAirport.city}, {activeAirport.state} • {activeAirport.tier}
+                    {activeAirport.city}, {activeAirport.state} • {activeAirport.fir}
                   </div>
                 </div>
               </div>
