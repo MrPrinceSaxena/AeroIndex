@@ -19,14 +19,14 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from dotenv import load_dotenv
 
-from src.ingestion.run_all import main as run_pipeline
+from src.ingestion.run_all import run_pipeline, CURRENT_PIPELINE_STATUS
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
@@ -36,8 +36,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] [scheduler] %(message)s",
 )
 
-# Configuration defaults
-DEFAULT_SCHEDULE_HOUR = int(os.getenv("SCHEDULE_CRON_HOUR", "6"))  # 06:00 UTC / IST
+DEFAULT_SCHEDULE_HOUR = int(os.getenv("SCHEDULE_CRON_HOUR", "6"))  # 06:00 UTC
 DEFAULT_SCHEDULE_MINUTE = int(os.getenv("SCHEDULE_CRON_MINUTE", "0"))
 
 
@@ -55,8 +54,8 @@ class APIxScheduler:
         """Wrapper executed on schedule with error isolation."""
         logger.info("Executing scheduled APIx ingestion run...")
         try:
-            await run_pipeline()
-            logger.info("Scheduled APIx ingestion run finished successfully.")
+            summary = await run_pipeline()
+            logger.info("Scheduled APIx ingestion run finished successfully: %s", summary)
         except Exception as exc:
             logger.error("Scheduled APIx ingestion encountered an unexpected error: %s", exc, exc_info=True)
 
@@ -100,10 +99,21 @@ class APIxScheduler:
             self.is_running = False
             logger.info("APIx scheduler stopped.")
 
-    async def trigger_now(self) -> None:
-        """Trigger an immediate ingestion run on demand."""
-        logger.info("Triggering immediate on-demand ingestion run...")
-        await self._scheduled_job_wrapper()
+    async def trigger_now(
+        self,
+        sources: Optional[list[str]] = None,
+        routes: Optional[list[str]] = None,
+        advance_windows: Optional[list[int]] = None,
+        do_gap_fill: bool = True,
+    ) -> dict[str, Any]:
+        """Trigger an immediate ingestion run on demand with optional filters."""
+        logger.info("Triggering on-demand ingestion run...")
+        return await run_pipeline(
+            sources=sources,
+            routes=routes,
+            advance_windows=advance_windows,
+            do_gap_fill=do_gap_fill,
+        )
 
 
 # Global instance for app lifecycle hooks

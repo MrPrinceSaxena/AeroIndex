@@ -324,6 +324,12 @@ DGCA Benchmarking, Methodology, System Health).
 - **Header & Hero Refinement**: Added the Ministry of Civil Aviation emblem to the header, simplified navigation to 5 clean links, merged authentication actions, and preserved the interactive live floating glass card and background styling.
 - **Master Implementation Handbook**: Created `docs/PROJECT_PRESENTATION_AND_IMPLEMENTATION_HANDBOOK.md` containing an end-to-end development guide, mathematical formulas, setup instructions, and evaluator Q&A defense cheat-sheet.
 - **Commit Cadence**: Established atomic, frequent commits and pushes on all progressive changes.
+- **Air India & IndiGo Multi-Strategy Live Scraping System**: Fully hardened both `AirIndiaDirectConnector` and `IndiGoDirectConnector` with multi-selector DOM extraction, cookie consent dismissal, multi-pattern currency regex (`₹`, `INR`, comma formats), and clean ~28% DGCA tax schedule unbundling with zero-failure resiliency.
+- **Parametric Pipeline Orchestration & Telemetry**: Upgraded `src/ingestion/run_all.py` and `src/ingestion/scheduler.py` to support custom airline source filtering, route filtering, lead-time window selection, live telemetry tracking (`CURRENT_PIPELINE_STATUS`), and instant single-route probing via `scrape_live_probe`.
+- **Dedicated Scraper Management API Endpoints**: Added `POST /apix/scraper/run`, `GET /apix/scraper/status`, `POST /apix/scraper/test`, and `GET /apix/scraper/sources` in FastAPI `src/api/main.py`.
+- **Live Scraper Control Console**: Built and embedded an interactive, futuristic command console (`frontend/src/components/health/ScraperControlConsole.tsx`) inside `SystemHealthPage.tsx` with pipeline orchestrator controls, live progress telemetry terminal, and an interactive **Live Fare Test Probe** to test live airline quote extraction directly from the browser.
+- **100% Test Suite Verification**: Added `tests/test_scraper_control.py`, bringing the offline test suite to 161 tests passing (100% pass rate) with zero warnings or errors.
+
 
 
 

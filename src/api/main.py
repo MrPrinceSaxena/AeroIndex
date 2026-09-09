@@ -63,6 +63,7 @@ from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_
 from src.api.system_health import compute_overall_status
 from src.db.connection import close_pool
 from src.ingestion.scheduler import global_scheduler
+from src.ingestion.run_all import run_pipeline, scrape_live_probe, CURRENT_PIPELINE_STATUS
 from src.api.auth import (
     SignUpRequest,
     LoginRequest,
@@ -365,6 +366,46 @@ class SystemHealthResponse(BaseModel):
     source_freshness: list[SourceFreshness]
     scheduler: SchedulerStatus | None = None
     generated_at: datetime
+
+
+class ScraperRunRequest(BaseModel):
+    sources: list[str] = ["air_india_direct", "indigo_direct"]
+    routes: list[str] = ["DEL-BOM", "DEL-BLR", "BOM-BLR"]
+    advance_windows: list[int] = [7, 30]
+    do_gap_fill: bool = True
+    do_cross_validation: bool = True
+
+
+class ScraperTestRequest(BaseModel):
+    carrier: str = "Air India"
+    route: str = "DEL-BOM"
+    advance_purchase_days: int = 7
+
+
+class ScraperStatusResponse(BaseModel):
+    is_running: bool
+    current_run_id: str | None = None
+    current_step: str = "idle"
+    progress_pct: int = 0
+    logs: list[str] = []
+    last_run_summary: dict | None = None
+    generated_at: datetime
+
+
+class ScraperSourceInfo(BaseModel):
+    source_name: str
+    display_name: str
+    carrier: str
+    compliance_status: str
+    supported_routes: list[str]
+    description: str
+    channel: str
+
+
+class ScraperSourcesResponse(BaseModel):
+    sources: list[ScraperSourceInfo]
+    generated_at: datetime
+
 
 
 
@@ -852,6 +893,99 @@ async def trigger_scheduler_run():
         "message": "Live APIx extraction pipeline initiated in background.",
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+@app.post("/apix/scraper/run")
+async def trigger_custom_scraper_run(req: ScraperRunRequest):
+    """
+    Parametric on-demand extraction run with custom airline source, route, and window controls.
+    """
+    import asyncio
+    asyncio.create_task(
+        run_pipeline(
+            sources=req.sources,
+            routes=req.routes,
+            advance_windows=req.advance_windows,
+            do_gap_fill=req.do_gap_fill,
+            do_cross_validation=req.do_cross_validation,
+        )
+    )
+    return {
+        "status": "initiated",
+        "message": f"Extraction started for {', '.join(req.sources)} across {len(req.routes)} routes.",
+        "sources": req.sources,
+        "routes": req.routes,
+        "advance_windows": req.advance_windows,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/apix/scraper/status", response_model=ScraperStatusResponse)
+async def get_scraper_status():
+    """
+    Live scraping engine telemetry, current progress percentage, active step, and logs.
+    """
+    return ScraperStatusResponse(
+        is_running=CURRENT_PIPELINE_STATUS.get("is_running", False),
+        current_run_id=CURRENT_PIPELINE_STATUS.get("current_run_id"),
+        current_step=CURRENT_PIPELINE_STATUS.get("current_step", "idle"),
+        progress_pct=CURRENT_PIPELINE_STATUS.get("progress_pct", 0),
+        logs=CURRENT_PIPELINE_STATUS.get("logs", [])[-20:],  # last 20 log lines
+        last_run_summary=CURRENT_PIPELINE_STATUS.get("last_run_summary"),
+        generated_at=datetime.utcnow(),
+    )
+
+
+@app.post("/apix/scraper/test")
+async def test_scraper_live(req: ScraperTestRequest):
+    """
+    Instant single flight fare extraction test directly from Air India or IndiGo.
+    Returns live card parsing without writing to database.
+    """
+    result = await scrape_live_probe(
+        carrier=req.carrier,
+        route=req.route,
+        advance_purchase_days=req.advance_purchase_days,
+    )
+    return result
+
+
+@app.get("/apix/scraper/sources", response_model=ScraperSourcesResponse)
+async def get_scraper_sources():
+    """
+    Supported airline direct sources, compliance posture, and route capabilities.
+    """
+    sources_data = [
+        ScraperSourceInfo(
+            source_name="air_india_direct",
+            display_name="Air India Direct",
+            carrier="Air India",
+            compliance_status="Permissive (robots.txt audited)",
+            supported_routes=["DEL-BOM", "DEL-BLR", "BOM-BLR", "DEL-CCU", "BLR-HYD", "MAA-DEL"],
+            description="Direct dynamic DOM scraper with ~28% domestic tax unbundling schedule.",
+            channel="web_direct",
+        ),
+        ScraperSourceInfo(
+            source_name="indigo_direct",
+            display_name="IndiGo Direct",
+            carrier="IndiGo",
+            compliance_status="Permissive (robots.txt audited)",
+            supported_routes=["DEL-BOM", "DEL-BLR", "BOM-BLR", "DEL-CCU", "BLR-HYD", "MAA-DEL"],
+            description="Direct dynamic DOM scraper for 6E domestic sectors with PSF/UDF unbundling.",
+            channel="web_direct",
+        ),
+        ScraperSourceInfo(
+            source_name="synthetic_estimate",
+            display_name="DGCA Synthetic Gap-Filler",
+            carrier="Calibrated Market Average",
+            compliance_status="Institutional Benchmark",
+            supported_routes=["DEL-BOM", "DEL-BLR", "BOM-BLR", "DEL-CCU", "BLR-HYD", "MAA-DEL"],
+            description="Calibrated gap-filler tagged explicitly when real sources do not cover a specific route/date cell.",
+            channel="synthetic",
+        ),
+    ]
+    return ScraperSourcesResponse(sources=sources_data, generated_at=datetime.utcnow())
+
 
 
 

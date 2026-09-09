@@ -100,4 +100,35 @@ export async function triggerSchedulerRun(): Promise<{ status: string; message: 
   return apiPost("/system/scheduler/trigger");
 }
 
+export async function triggerCustomScraperRun(options: {
+  sources: string[];
+  routes: string[];
+  advance_windows: number[];
+  do_gap_fill?: boolean;
+  do_cross_validation?: boolean;
+}): Promise<{ status: string; message: string; sources: string[]; routes: string[]; advance_windows: number[]; timestamp: string }> {
+  return apiPost("/apix/scraper/run", options);
+}
+
+export async function getScraperStatus(): Promise<import("../types/apix").ScraperStatusResponse> {
+  return apiGet("/apix/scraper/status");
+}
+
+export async function probeLiveScrape(
+  carrier: string,
+  route: string,
+  advanceDays: number,
+): Promise<import("../types/apix").ScraperProbeResult> {
+  return apiPost("/apix/scraper/test", {
+    carrier,
+    route,
+    advance_purchase_days: advanceDays,
+  });
+}
+
+export async function getScraperSources(): Promise<import("../types/apix").ScraperSourcesResponse> {
+  return apiGet("/apix/scraper/sources");
+}
+
+
 

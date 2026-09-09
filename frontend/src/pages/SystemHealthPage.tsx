@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/Badge";
 import { HealthStatusBanner } from "../components/health/HealthStatusBanner";
 import { IngestionRunsTable } from "../components/health/IngestionRunsTable";
 import { SourceFreshnessTable } from "../components/health/SourceFreshnessTable";
+import { ScraperControlConsole } from "../components/health/ScraperControlConsole";
 import { LoadingSkeleton } from "../components/ui/LoadingSkeleton";
 import { ErrorState } from "../components/ui/ErrorState";
 import { ApiError, triggerSchedulerRun } from "../api/client";
@@ -45,11 +46,11 @@ export function SystemHealthPage() {
   const recordsInLastRun = lastRunGroup.reduce((a, r) => a + r.records_ingested, 0);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Breadcrumbs />
       <PageHeader
-        title="System Health"
-        subtitle="Live pipeline observability — database connectivity, automated daily scheduler, and per-source freshness."
+        title="System Health & Scraper Command"
+        subtitle="Live pipeline observability, automated daily scheduler, and fine-grained scraper control studio for Air India & IndiGo."
         actions={
           <div className="flex items-center gap-2">
             {h?.scheduler && (
@@ -62,7 +63,7 @@ export function SystemHealthPage() {
               disabled={triggering}
               className="inline-flex items-center gap-1.5 rounded-lg border border-apix-border bg-apix-surface px-3 py-1.5 text-xs font-medium text-apix-text shadow-sm transition-colors hover:bg-apix-border/50 disabled:opacity-50"
             >
-              {triggering ? "Starting Run..." : "Trigger Ingestion Now"}
+              {triggering ? "Starting Run..." : "Quick Run All"}
             </button>
             <Badge tone="info">Auto-refreshes (30s)</Badge>
           </div>
@@ -74,7 +75,6 @@ export function SystemHealthPage() {
           {triggerMsg}
         </div>
       )}
-
 
       {health.isLoading && <LoadingSkeleton height={90} label="Checking system health" />}
       {health.isError && (
@@ -126,6 +126,9 @@ export function SystemHealthPage() {
               </Panel>
             ))}
           </div>
+
+          {/* Interactive Scraper Control Console */}
+          <ScraperControlConsole onRunCompleted={() => health.refetch()} />
 
           <Panel
             title="Source freshness"

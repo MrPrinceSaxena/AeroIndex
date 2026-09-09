@@ -339,3 +339,75 @@ export interface RouteStatsResponse {
   airlines: AirlineStat[];
   generated_at: string;
 }
+
+// ─── Scraper Control Console ────────────────────────────────────────────
+
+export interface ScraperRunOptions {
+  sources: string[];
+  routes: string[];
+  advance_windows: number[];
+  do_gap_fill: boolean;
+  do_cross_validation: boolean;
+}
+
+export interface ScraperStatusResponse {
+  is_running: boolean;
+  current_run_id: string | null;
+  current_step: string;
+  progress_pct: number;
+  logs: string[];
+  last_run_summary: {
+    run_id: string;
+    status: string;
+    air_india_records?: number;
+    indigo_records?: number;
+    real_saved?: number;
+    synthetic_saved?: number;
+    cross_source_comparisons?: number;
+    completed_at: string;
+    error?: string;
+  } | null;
+  generated_at: string;
+}
+
+export interface ScraperProbeQuote {
+  route: string;
+  carrier: string;
+  travel_date: string;
+  advance_days: number;
+  total_fare: number;
+  base_fare: number | null;
+  taxes: number | null;
+  is_sold_out: boolean;
+  data_origin: string;
+  channel: string;
+  provenance: Record<string, unknown> | null;
+}
+
+export interface ScraperProbeResult {
+  success: boolean;
+  carrier: string;
+  source_name: string;
+  route: string;
+  advance_purchase_days: number;
+  records_found: number;
+  duration_seconds?: number;
+  quotes?: ScraperProbeQuote[];
+  error?: string;
+}
+
+export interface ScraperSourceInfo {
+  source_name: string;
+  display_name: string;
+  carrier: string;
+  compliance_status: string;
+  supported_routes: string[];
+  description: string;
+  channel: string;
+}
+
+export interface ScraperSourcesResponse {
+  sources: ScraperSourceInfo[];
+  generated_at: string;
+}
+
