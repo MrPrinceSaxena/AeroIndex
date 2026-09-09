@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plane, ArrowRight, Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { Plane, ArrowRight, Menu, X, LogOut, ChevronDown, Landmark } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { ThemeToggle } from "../ThemeToggle";
 
@@ -41,15 +41,34 @@ export function LandingNavbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           
-          {/* Concise Modern Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-xs transition-transform group-hover:scale-105">
-              <Plane className="h-4.5 w-4.5" />
+          {/* Logo Brand + Ministry of Civil Aviation Institutional Emblem */}
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-xs transition-transform group-hover:scale-105">
+                <Plane className="h-4.5 w-4.5" />
+              </div>
+              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+                APIx
+              </span>
+            </Link>
+
+            <div className="h-5 w-px bg-slate-200 dark:border-white/10 hidden sm:block" />
+
+            {/* Ministry of Civil Aviation Emblem */}
+            <div className="hidden sm:flex items-center gap-2 text-left">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 shadow-2xs">
+                <Landmark className="h-3.5 w-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
+                  Ministry of Civil Aviation
+                </span>
+                <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
+                  Govt. of India
+                </span>
+              </div>
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-              APIx
-            </span>
-          </Link>
+          </div>
 
           {/* Simple Clean Desktop Menu */}
           <nav className="hidden md:flex items-center gap-1 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 px-3 py-1.5 backdrop-blur-md">
@@ -173,6 +192,13 @@ export function LandingNavbar() {
         {mobileMenuOpen && (
           <div className="mt-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 p-4 backdrop-blur-2xl shadow-xl md:hidden animate-in fade-in duration-150">
             <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 mb-1">
+                <Landmark className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="text-xs font-bold leading-tight">
+                  Ministry of Civil Aviation
+                  <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400 block">Government of India</span>
+                </div>
+              </div>
               <a
                 href="#overview"
                 onClick={() => setMobileMenuOpen(false)}
