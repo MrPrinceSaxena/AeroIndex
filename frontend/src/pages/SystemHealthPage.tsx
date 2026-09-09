@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSystemHealth } from "../hooks/useSystemHealth";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { Badge } from "../components/ui/Badge";
@@ -45,6 +46,7 @@ export function SystemHealthPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="System Health"
         subtitle="Live pipeline observability — database connectivity, automated daily scheduler, and per-source freshness."

@@ -1,5 +1,6 @@
 import { useBacktest } from "../hooks/useBacktest";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { Badge } from "../components/ui/Badge";
@@ -26,6 +27,7 @@ export function BenchmarkingPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="DGCA Benchmarking"
         subtitle="Validating the index against the Directorate General of Civil Aviation's published average fares. Large deviations are flagged as a data-quality signal, not hidden."

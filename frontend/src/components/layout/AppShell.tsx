@@ -3,6 +3,7 @@ import { Menu, Plane } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { GovFooter } from "./GovFooter";
 import { ThemeToggle } from "../ThemeToggle";
+import { CommandPalette } from "../ui/CommandPalette";
 
 interface AppShellProps {
   children: ReactNode;
@@ -58,6 +59,8 @@ export function AppShell({ children }: AppShellProps) {
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6 lg:px-7 lg:py-7">
           {children}
         </main>
+
+        <CommandPalette />
 
         <GovFooter />
       </div>

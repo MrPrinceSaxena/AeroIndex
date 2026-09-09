@@ -4,6 +4,7 @@ import { useOverview } from "../hooks/useOverview";
 import { useContributions } from "../hooks/useContributions";
 import { useCatalog } from "../hooks/useCatalog";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { Badge } from "../components/ui/Badge";
@@ -32,6 +33,7 @@ export function AirFareIndexPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="Air Fare Index"
         subtitle="The full APIx history — a fixed-basket, DGCA-traffic-weighted, chain-linked price index across the monitored route basket."

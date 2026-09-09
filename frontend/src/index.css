@@ -302,3 +302,25 @@ body {
   animation: flight-dash 25s linear infinite;
 }
 
+/* Institutional Executive Print / PDF Briefing Styles */
+@media print {
+  aside,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  main {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+  }
+}
+
