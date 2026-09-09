@@ -82,6 +82,19 @@ export function DataExplorerPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportJson = () => {
+    if (!quotes.data?.rows.length) return;
+    const blob = new Blob([JSON.stringify(quotes.data.rows, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `apix-fare-quotes-page-${Math.floor((filters.offset ?? 0) / PAGE_SIZE) + 1}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -177,7 +190,16 @@ export function DataExplorerPage() {
               className="inline-flex items-center gap-1.5 rounded-lg border border-apix-border px-2.5 py-1.5 text-[12px] font-medium text-apix-text-soft transition-colors hover:bg-apix-surface-alt disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="h-3.5 w-3.5" aria-hidden="true" />
-              Export CSV
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={handleExportJson}
+              disabled={!quotes.data?.rows.length}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-apix-border px-2.5 py-1.5 text-[12px] font-medium text-apix-text-soft transition-colors hover:bg-apix-surface-alt disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              JSON
             </button>
           </>
         }
