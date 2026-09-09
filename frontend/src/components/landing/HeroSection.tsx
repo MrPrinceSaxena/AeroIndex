@@ -115,7 +115,7 @@ export function HeroSection() {
 
             {/* Supporting Subheadline */}
             <p className="max-w-2xl text-base sm:text-lg text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
-              APIx delivers real-time air fare intelligence with reliable data, transparent methodology, and actionable insights for a more connected India. Powered by DGCA passenger traffic weighting and cryptographic provenance.
+              APIx delivers real-time air fare index and analytics with reliable data, transparent methodology, and actionable insights for a more connected India. Powered by DGCA passenger traffic weighting and cryptographic provenance.
             </p>
 
             {/* CTAs */}
