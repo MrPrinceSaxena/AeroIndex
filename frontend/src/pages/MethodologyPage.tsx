@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApix } from "../hooks/useApix";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { Badge } from "../components/ui/Badge";
 import { RouteWeightsTable } from "../components/methodology/RouteWeightsTable";
@@ -48,8 +49,9 @@ export function MethodologyPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
-        title="Methodology"
+        title="Methodology & Compliance"
         subtitle="Why this index can be trusted: where the numbers come from, how they are cleaned, how they are combined, and what was ruled out along the way."
       />
 

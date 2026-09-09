@@ -4,6 +4,7 @@ import { useQuotes } from "../hooks/useQuotes";
 import { useCatalog } from "../hooks/useCatalog";
 import { useDataQuality } from "../hooks/useDataQuality";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { Field, SelectField, Toolbar, controlClasses } from "../components/ui/Field";
 import { QuotesTable } from "../components/explorer/QuotesTable";
@@ -60,20 +61,21 @@ export function DataExplorerPage() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) =>
-      [r.route, r.carrier ?? "", r.source_name, r.fare_class ?? "", String(r.total_fare)]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
+      (r.carrier ?? "").toLowerCase().includes(q) ||
+      (r.route ?? "").toLowerCase().includes(q) ||
+      (r.source_name ?? "").toLowerCase().includes(q) ||
+      (r.fare_class ?? "").toLowerCase().includes(q),
     );
   }, [quotes.data?.rows, search]);
 
-  const update = (patch: Partial<QuotesFilters>) =>
+  const update = (patch: Partial<QuotesFilters>) => {
     setFilters((prev) => ({ ...prev, ...patch, offset: 0 }));
+  };
 
   const handleExport = () => {
-    const rows = quotes.data?.rows ?? [];
-    if (rows.length === 0) return;
-    const blob = new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8;" });
+    if (!quotes.data?.rows.length) return;
+    const csv = toCsv(quotes.data.rows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -97,6 +99,7 @@ export function DataExplorerPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="Data Explorer"
         subtitle="Every fare quote the pipeline has collected, filterable and traceable to its source. Sold-out quotes and pipeline-flagged outliers are shown and labelled, never quietly dropped."

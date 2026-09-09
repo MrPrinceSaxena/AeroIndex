@@ -4,6 +4,7 @@ import { useRouteStats } from "../hooks/useRouteStats";
 import { useRouteHistory } from "../hooks/useRouteHistory";
 import { useElasticity } from "../hooks/useElasticity";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { Field, SelectField, Toolbar, controlClasses } from "../components/ui/Field";
@@ -44,6 +45,7 @@ export function RouteAnalyticsPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="Route Analytics"
         subtitle="Drill into one city pair: fare history, how price moves as departure approaches, the spread behind the averages, and which carriers are flying it."
