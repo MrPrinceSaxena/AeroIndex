@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Zap,
 } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../ThemeProvider";
 
 interface SearchItem {
   id: string;
@@ -31,7 +31,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const handleOpen = useCallback(() => setIsOpen(true), []);
   const handleClose = useCallback(() => {
@@ -143,7 +143,7 @@ export function CommandPalette() {
       category: "Actions",
       icon: theme === "dark" ? Sun : Moon,
       action: () => {
-        toggleTheme();
+        setTheme(theme === "dark" ? "light" : "dark");
         handleClose();
       },
       shortcut: "T",
