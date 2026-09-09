@@ -1,17 +1,27 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 
-export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export function ThemeToggle({ className = "" }: ThemeToggleProps) {
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
-      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-apix-border bg-apix-surface text-apix-text-soft shadow-sm hover:bg-apix-surface-alt hover:text-apix-text transition-colors"
-      aria-label="Toggle theme"
+      type="button"
+      onClick={toggleTheme}
+      className={`group relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 dark:border-white/15 bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 shadow-xs hover:border-blue-300 dark:hover:border-cyan-400/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 active:scale-95 ${className}`}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      <Moon className="h-[1.125rem] w-[1.125rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Sun className="absolute h-[1.125rem] w-[1.125rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      {isDark ? (
+        <Sun className="h-4 w-4 text-amber-400 transition-transform duration-300 group-hover:rotate-45" />
+      ) : (
+        <Moon className="h-4 w-4 text-slate-700 transition-transform duration-300 group-hover:-rotate-12" />
+      )}
       <span className="sr-only">Toggle theme</span>
     </button>
   );

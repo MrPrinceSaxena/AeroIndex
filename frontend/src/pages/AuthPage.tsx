@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export function AuthPage() {
   const [searchParams] = useSearchParams();
@@ -128,7 +129,8 @@ export function AuthPage() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+        <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <ThemeToggle />
           <Link
             to="/"
             className="px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 hover:bg-white text-slate-700 dark:text-white transition-all shadow-xs"

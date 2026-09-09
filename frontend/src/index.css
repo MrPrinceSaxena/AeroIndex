@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
   APIx design system — light "government analytics platform" visual language:
   white surfaces, soft blue accents, dense-but-readable cards, subtle borders.
@@ -87,6 +89,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --apix-primary: #3b82f6;
   --apix-primary-dark: #2563eb;
   --apix-primary-soft: #1e3a8a;
