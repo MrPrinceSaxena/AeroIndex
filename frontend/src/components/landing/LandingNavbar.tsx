@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plane, ArrowRight, Menu, X, Landmark, ShieldCheck, LogOut, CheckCircle, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { ThemeToggle } from "../ThemeToggle";
 
 export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -226,6 +227,9 @@ export function LandingNavbar() {
               </div>
             )}
 
+            {/* Theme Switcher Toggle */}
+            <ThemeToggle />
+
             {/* Primary Launch Dashboard CTA */}
             <button
               onClick={() => navigate(isAuthenticated ? "/overview" : "/login?redirect=/overview")}
@@ -237,8 +241,9 @@ export function LandingNavbar() {
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu & Theme Button */}
           <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="rounded-lg p-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
