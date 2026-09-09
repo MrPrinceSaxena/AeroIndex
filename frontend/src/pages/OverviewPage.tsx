@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { Printer } from "lucide-react";
 import { useApix } from "../hooks/useApix";
 import { useOverview } from "../hooks/useOverview";
 import { useSummary } from "../hooks/useSummary";
 import { useSystemHealth } from "../hooks/useSystemHealth";
 import { useDataQuality } from "../hooks/useDataQuality";
 import { PageHeader } from "../components/layout/PageHeader";
+import { Breadcrumbs } from "../components/ui/Breadcrumbs";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { Badge, StatusDot } from "../components/ui/Badge";
@@ -35,13 +37,25 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-5">
+      <Breadcrumbs />
       <PageHeader
         title="National Airfare Monitoring — Overview"
         subtitle="A weighted, chain-linked index of what domestic flights actually cost, built for MoSPI and RBI. Every figure on this page is computed from collected fare data, not illustrative."
         actions={
-          o?.latest_date ? (
-            <Badge tone="info">Latest observation {formatDate(o.latest_date)}</Badge>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {o?.latest_date && (
+              <Badge tone="info">Latest observation {formatDate(o.latest_date)}</Badge>
+            )}
+            <button
+              type="button"
+              onClick={() => window.print()}
+              title="Print / Save PDF Briefing"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-apix-border bg-apix-surface px-2.5 py-1.5 text-xs font-semibold text-apix-text transition-colors hover:bg-apix-surface-alt shadow-xs"
+            >
+              <Printer className="h-3.5 w-3.5 text-apix-primary" />
+              <span>Print Briefing</span>
+            </button>
+          </div>
         }
       />
 
