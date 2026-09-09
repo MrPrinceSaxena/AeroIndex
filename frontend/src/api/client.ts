@@ -100,6 +100,11 @@ export async function triggerSchedulerRun(): Promise<{ status: string; message: 
   return apiPost("/system/scheduler/trigger");
 }
 
+export async function clearFailedIngestionRuns(): Promise<{ success: boolean; message: string; deleted_count: number; timestamp: string }> {
+  return apiPost("/system/runs/clear-failed");
+}
+
+
 export async function triggerCustomScraperRun(options: {
   sources: string[];
   routes: string[];

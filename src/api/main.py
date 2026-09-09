@@ -59,7 +59,7 @@ from src.cleaning.pipeline import load_raw_fares, deduplicate, flag_outliers, re
 from src.api.data_quality import summarize_data_quality, outliers_by_group, compute_coverage_completeness
 from src.backtest.compare_dgca import compare as compare_dgca, describe_comparison, DEVIATION_THRESHOLD_PCT
 from src.api.quotes import load_fare_quotes_page
-from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_row_counts, check_db_connectivity
+from src.ingestion.run_log import load_recent_runs, load_source_freshness, load_row_counts, check_db_connectivity, delete_failed_runs
 from src.api.system_health import compute_overall_status
 from src.db.connection import close_pool
 from src.ingestion.scheduler import global_scheduler
@@ -878,6 +878,23 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
         ),
         generated_at=datetime.utcnow(),
     )
+
+
+@app.post("/system/runs/clear-failed")
+async def clear_failed_runs_endpoint():
+    """
+    Purge all failed ingestion_runs records and errors from the database.
+    """
+    try:
+        deleted_count = delete_failed_runs()
+        return {
+            "success": True,
+            "message": f"Successfully cleared {deleted_count} failed ingestion log records.",
+            "deleted_count": deleted_count,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear runs: {e}")
 
 
 @app.post("/system/scheduler/trigger")

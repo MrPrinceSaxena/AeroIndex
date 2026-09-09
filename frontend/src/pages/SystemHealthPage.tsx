@@ -11,7 +11,7 @@ import { SourceFreshnessTable } from "../components/health/SourceFreshnessTable"
 import { ScraperControlConsole } from "../components/health/ScraperControlConsole";
 import { LoadingSkeleton } from "../components/ui/LoadingSkeleton";
 import { ErrorState } from "../components/ui/ErrorState";
-import { ApiError, triggerSchedulerRun } from "../api/client";
+import { ApiError, triggerSchedulerRun, clearFailedIngestionRuns } from "../api/client";
 import { formatNumber, relativeTime } from "../utils/format";
 
 function errorMessage(error: unknown): string {
@@ -22,6 +22,7 @@ export function SystemHealthPage() {
   const health = useSystemHealth();
   const h = health.data;
   const [triggering, setTriggering] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
 
   const handleTrigger = async () => {
@@ -39,11 +40,27 @@ export function SystemHealthPage() {
     }
   };
 
+  const handleClearFailed = async () => {
+    try {
+      setClearing(true);
+      setTriggerMsg(null);
+      const res = await clearFailedIngestionRuns();
+      setTriggerMsg(res.message || "Cleared failed ingestion logs.");
+      health.refetch();
+      setTimeout(() => setTriggerMsg(null), 6000);
+    } catch (err) {
+      setTriggerMsg(errorMessage(err));
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const runs = h?.recent_runs ?? [];
   const lastRun = runs[0];
   const lastRunGroup = lastRun ? runs.filter((r) => r.run_id === lastRun.run_id) : [];
   const failedInLastRun = lastRunGroup.filter((r) => r.status === "failed").length;
   const recordsInLastRun = lastRunGroup.reduce((a, r) => a + r.records_ingested, 0);
+  const totalFailedRuns = runs.filter((r) => r.status === "failed").length;
 
   return (
     <div className="space-y-6">
@@ -57,6 +74,15 @@ export function SystemHealthPage() {
               <Badge tone={h.scheduler.is_running ? "success" : "neutral"}>
                 Scheduler: {h.scheduler.is_running ? "Active (Daily 06:00 UTC)" : "Manual"}
               </Badge>
+            )}
+            {totalFailedRuns > 0 && (
+              <button
+                onClick={handleClearFailed}
+                disabled={clearing}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 shadow-sm transition-colors hover:bg-rose-500/20 disabled:opacity-50"
+              >
+                {clearing ? "Purging..." : `Purge ${totalFailedRuns} Failed Logs`}
+              </button>
             )}
             <button
               onClick={handleTrigger}
@@ -140,6 +166,15 @@ export function SystemHealthPage() {
           <Panel
             title="Recent ingestion runs"
             caption="Every step of every pipeline invocation, with failures and their error messages retained."
+            actions={
+              <button
+                onClick={handleClearFailed}
+                disabled={clearing}
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 disabled:opacity-50 transition-colors"
+              >
+                {clearing ? "Purging..." : "Clear Failed Logs"}
+              </button>
+            }
           >
             <IngestionRunsTable runs={h.recent_runs} />
           </Panel>

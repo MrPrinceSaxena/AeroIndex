@@ -67,6 +67,21 @@ def load_recent_runs(limit: int = 20) -> list[dict]:
             return [dict(row) for row in cur.fetchall()]
 
 
+def delete_failed_runs() -> int:
+    """Delete all failed ingestion_runs rows from the database."""
+    with db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM ingestion_runs
+                WHERE status = 'failed' OR error_message IS NOT NULL;
+                """
+            )
+            count = cur.rowcount
+        conn.commit()
+    return count
+
+
 def load_source_freshness() -> list[dict]:
     """Per-source row counts and most recent scrape/insert timestamps."""
     with db_connection() as conn:
