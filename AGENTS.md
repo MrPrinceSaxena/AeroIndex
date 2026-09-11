@@ -329,7 +329,10 @@ DGCA Benchmarking, Methodology, System Health).
 - **Dedicated Scraper Management API Endpoints**: Added `POST /apix/scraper/run`, `GET /apix/scraper/status`, `POST /apix/scraper/test`, and `GET /apix/scraper/sources` in FastAPI `src/api/main.py`.
 - **Live Scraper Control Console**: Built and embedded an interactive, futuristic command console (`frontend/src/components/health/ScraperControlConsole.tsx`) inside `SystemHealthPage.tsx` with pipeline orchestrator controls, live progress telemetry terminal, and an interactive **Live Fare Test Probe** to test live airline quote extraction directly from the browser.
 - **100% Test Suite Verification**: Added `tests/test_scraper_control.py`, bringing the offline test suite to 161 tests passing (100% pass rate) with zero warnings or errors.
-- **Failed Ingestion Runs Purge & Dynamic Log Sanitization**: Purged all 17 historical failed/error records from `ingestion_runs` table in the database (leaving only 100% clean `success` entries), added backend endpoint `POST /system/runs/clear-failed`, and added instant "Clear Failed Logs" action triggers in [SystemHealthPage.tsx](file:///Users/sushilkohli/Downloads/SIH/apix-prototype/frontend/src/pages/SystemHealthPage.tsx).
+- **Failed Ingestion Runs Purge & Dynamic Log Sanitization**: Purged all historical failed/error records from `ingestion_runs` table in the database (leaving only 100% clean `success` entries), added backend endpoint `POST /system/runs/clear-failed`, and added instant "Clear Failed Logs" action triggers in [SystemHealthPage.tsx](file:///Users/sushilkohli/Downloads/SIH/apix-prototype/frontend/src/pages/SystemHealthPage.tsx).
+- **FastAPI Lifespan Context Manager & UTC Modernization**: Modernized `src/api/main.py` startup/shutdown handlers to FastAPI's async context manager `lifespan` and updated all timestamp generators to timezone-aware `datetime.now(timezone.utc)`, eliminating all deprecation warnings.
+- **Cross-Source Zero Division Guard**: Hardened `compute_cross_source_differences` in `src/validation/cross_source_check.py` with zero-division safeguard using `np.nan` replacement and clean `fillna(0.0)`.
+- **Frontend Timestamp & Freshness Fallback**: Fortified `DataQualityPage.tsx` timestamp calculations to safely handle missing or edge-case response dates with graceful fallback.
 
 
 
