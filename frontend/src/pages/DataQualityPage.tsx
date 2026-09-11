@@ -112,10 +112,11 @@ export function DataQualityPage() {
                 // Measured against the server's own response timestamp rather
                 // than wall-clock time, so staleness reflects the data as the
                 // backend saw it and stays stable across re-renders.
+                const generatedTimestamp = health.data?.generated_at
+                  ? new Date(health.data.generated_at).getTime()
+                  : Date.now();
                 const ageHrs = s.latest_created_at
-                  ? (new Date(health.data!.generated_at).getTime() -
-                      new Date(s.latest_created_at).getTime()) /
-                    3_600_000
+                  ? (generatedTimestamp - new Date(s.latest_created_at).getTime()) / 3_600_000
                   : null;
                 const stale = ageHrs == null || ageHrs > STALE_AFTER_HOURS;
                 return (
