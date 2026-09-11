@@ -19,6 +19,7 @@ import os
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 import psycopg2
@@ -72,9 +73,12 @@ def compute_cross_source_differences(
     joined["source_b"] = source_b
     joined["price_a"] = joined["total_fare_a"]
     joined["price_b"] = joined["total_fare_b"]
+    denom = joined["price_a"].replace(0, np.nan)
     joined["pct_difference"] = (
-        (joined["price_a"] - joined["price_b"]).abs() / joined["price_a"] * 100
-    ).round(2)
+        ((joined["price_a"] - joined["price_b"]).abs() / denom * 100)
+        .fillna(0.0)
+        .round(2)
+    )
 
     return joined[[
         "route", "travel_date", "advance_purchase_days",
