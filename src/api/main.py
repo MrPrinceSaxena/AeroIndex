@@ -28,8 +28,9 @@ Run: uvicorn src.api.main:app --reload
 
 from __future__ import annotations
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -82,6 +83,24 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 Route = Literal["DEL-BOM", "DEL-BLR", "BOM-BLR"]
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage startup and shutdown lifecycle for scheduler and DB connections."""
+    enable_sched = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
+    if enable_sched:
+        try:
+            global_scheduler.start()
+        except Exception as e:
+            print(f"[scheduler] Could not auto-start scheduler: {e}")
+    yield
+    try:
+        global_scheduler.shutdown(wait=False)
+    except Exception:
+        pass
+    close_pool()
+
+
 app = FastAPI(
     title="APIx — Real-time Airfare Price Index",
     description=(
@@ -90,6 +109,7 @@ app = FastAPI(
         "Methodology metadata is returned alongside every number."
     ),
     version="0.2.0",
+    lifespan=lifespan,
 )
 
 # CORS_ORIGINS is a comma-separated list (e.g. the deployed frontend's URL in
@@ -107,27 +127,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def _startup_services() -> None:
-    """Start background daily scheduler if enabled."""
-    enable_sched = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
-    if enable_sched:
-        try:
-            global_scheduler.start()
-        except Exception as e:
-            print(f"[scheduler] Could not auto-start scheduler: {e}")
-
-
-@app.on_event("shutdown")
-def _shutdown_services() -> None:
-    """Release pooled Postgres connections and shutdown background jobs when API stops."""
-    try:
-        global_scheduler.shutdown(wait=False)
-    except Exception:
-        pass
-    close_pool()
 
 
 
@@ -547,7 +546,7 @@ async def get_apix_index():
         weekly_series=weekly_df.to_dict(orient="records") if not weekly_df.empty else [],
         methodology=methodology,
         data_coverage=DataCoverage(**compute_data_coverage(df)),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -569,7 +568,7 @@ async def get_apix_heatmap():
         HeatmapCell(route=row["route"], advance_purchase_days=int(row["advance_purchase_days"]), median_fare=row["median_fare"])
         for _, row in heatmap_df.iterrows()
     ]
-    return HeatmapResponse(cells=cells, generated_at=datetime.utcnow())
+    return HeatmapResponse(cells=cells, generated_at=datetime.now(timezone.utc))
 
 
 @app.get("/apix/elasticity", response_model=ElasticityResponse)
@@ -593,7 +592,7 @@ async def get_apix_elasticity(route: Route = Query("DEL-BOM", description="One o
         )
         for _, row in elasticity_df.iterrows()
     ]
-    return ElasticityResponse(route=route, points=points, generated_at=datetime.utcnow())
+    return ElasticityResponse(route=route, points=points, generated_at=datetime.now(timezone.utc))
 
 
 @app.get("/apix/summary", response_model=SummaryResponse)
@@ -609,7 +608,7 @@ async def get_apix_summary():
     return SummaryResponse(
         summary=result["summary"],
         has_sufficient_data=result["has_sufficient_data"],
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -630,7 +629,7 @@ async def get_route_history(route: Route = Query("DEL-BOM", description="One of 
         )
         for _, row in history_df.iterrows()
     ]
-    return RouteHistoryResponse(route=route, points=points, generated_at=datetime.utcnow())
+    return RouteHistoryResponse(route=route, points=points, generated_at=datetime.now(timezone.utc))
 
 
 @app.get("/apix/contributions", response_model=RouteContributionsResponse)
@@ -653,7 +652,7 @@ async def get_route_contributions():
         to_date=result["to_date"],
         total_log_change=result["total_log_change"],
         contributions=[RouteContribution(**c) for c in result["contributions"]],
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -706,7 +705,7 @@ async def get_data_quality():
             else []
         ),
         **compute_coverage_completeness(raw_df),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -746,7 +745,7 @@ async def get_backtest():
         reference_period=described["reference_period"],
         live_data_period=described["live_data_period"],
         deviation_threshold_pct=DEVIATION_THRESHOLD_PCT,
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -803,7 +802,7 @@ async def get_fare_quotes(
         for _, row in df.iterrows()
     ]
     return FareQuotesResponse(
-        rows=rows, total_count=total_count, limit=limit, offset=offset, generated_at=datetime.utcnow()
+        rows=rows, total_count=total_count, limit=limit, offset=offset, generated_at=datetime.now(timezone.utc)
     )
 
 
@@ -825,7 +824,7 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
             row_counts=TableRowCounts(fare_quotes=0, cross_source_check=0, ingestion_runs=0),
             recent_runs=[],
             source_freshness=[],
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
         )
 
     try:
@@ -841,7 +840,7 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
             row_counts=TableRowCounts(fare_quotes=0, cross_source_check=0, ingestion_runs=0),
             recent_runs=[],
             source_freshness=[],
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
         )
 
     overall_status = compute_overall_status(db_ok, recent_runs, source_freshness)
@@ -876,7 +875,7 @@ async def get_system_health(run_limit: int = Query(20, le=100)):
             schedule="Daily at 06:00 UTC",
             next_run="Every 24h at 06:00 UTC" if global_scheduler.is_running else "Stopped",
         ),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -891,7 +890,7 @@ async def clear_failed_runs_endpoint():
             "success": True,
             "message": f"Successfully cleared {deleted_count} failed ingestion log records.",
             "deleted_count": deleted_count,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear runs: {e}")
@@ -908,7 +907,7 @@ async def trigger_scheduler_run():
     return {
         "status": "triggered",
         "message": "Live APIx extraction pipeline initiated in background.",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -933,7 +932,7 @@ async def trigger_custom_scraper_run(req: ScraperRunRequest):
         "sources": req.sources,
         "routes": req.routes,
         "advance_windows": req.advance_windows,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -949,7 +948,7 @@ async def get_scraper_status():
         progress_pct=CURRENT_PIPELINE_STATUS.get("progress_pct", 0),
         logs=CURRENT_PIPELINE_STATUS.get("logs", [])[-20:],  # last 20 log lines
         last_run_summary=CURRENT_PIPELINE_STATUS.get("last_run_summary"),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -1001,7 +1000,7 @@ async def get_scraper_sources():
             channel="synthetic",
         ),
     ]
-    return ScraperSourcesResponse(sources=sources_data, generated_at=datetime.utcnow())
+    return ScraperSourcesResponse(sources=sources_data, generated_at=datetime.now(timezone.utc))
 
 
 
@@ -1018,7 +1017,7 @@ async def get_catalog():
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
 
-    return CatalogResponse(**compute_catalog(df), generated_at=datetime.utcnow())
+    return CatalogResponse(**compute_catalog(df), generated_at=datetime.now(timezone.utc))
 
 
 @app.get("/apix/overview", response_model=OverviewResponse)
@@ -1081,7 +1080,7 @@ async def get_overview():
         synthetic_quotes=coverage["n_synthetic"],
         index_by_window=index_by_window,
         top_movers=[TopMover(**m) for m in movers],
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -1131,7 +1130,7 @@ async def get_route_stats(
         **summary,
         distribution=[FareBucket(**b) for b in distribution.to_dict(orient="records")],
         airlines=[AirlineStat(**a) for a in airlines.to_dict(orient="records")],
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
